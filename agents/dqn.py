@@ -25,7 +25,6 @@ class Agent(object):
                 entropic_index=0.5,
                 alpha=0.1,
                 select_action=epsilon_greedy,
-                exploration_mode='eg',
                 network=MLP,
                 target_update_step=1000,
                 buffer_size=int(1e5),
@@ -44,7 +43,6 @@ class Agent(object):
       self.entropic_index = entropic_index
       self.alpha = alpha
       self.select_action = select_action
-      self.exploration_mode = exploration_mode
       self.network = network
       self.target_update_step = target_update_step
       self.buffer_size = buffer_size
