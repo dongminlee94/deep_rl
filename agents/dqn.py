@@ -27,7 +27,7 @@ class Agent(object):
                 select_action=epsilon_greedy,
                 exploration_mode='eg',
                 network=MLP,
-                target_update_step=100,
+                target_update_step=1000,
                 buffer_size=int(1e5),
                 batch_size=64,
                 eval_mode=False,

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class MLP(nn.Module):
-    def __init__(self, obs_dim, act_dim, hidden_sizes=(64,64), activation=torch.tanh, output_activation=None):
+    def __init__(self, obs_dim, act_dim, hidden_sizes=(128,128), activation=torch.tanh, output_activation=None):
         super(MLP, self).__init__()
         self.obs_dim = obs_dim
         self.act_dim = act_dim

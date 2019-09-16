@@ -19,7 +19,7 @@ parser.add_argument('--alpha', type=float, default=0.1)
 parser.add_argument('--training_eps', type=int, default=1500)
 parser.add_argument('--eval_per_train', type=int, default=100)
 parser.add_argument('--evaluation_eps', type=int, default=100)
-parser.add_argument('--max_step', type=int, default=500)
+parser.add_argument('--max_step', type=int, default=1000)
 parser.add_argument('--threshold_return', type=int, default=200)
 args = parser.parse_args()
 
