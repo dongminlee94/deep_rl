@@ -28,7 +28,7 @@ class Agent(object):
                 exploration_mode='eg',
                 network=MLP,
                 target_update_step=100,
-                buffer_size=int(1e4),
+                buffer_size=int(1e5),
                 batch_size=64,
                 eval_mode=False,
                 q_losses=list()):
@@ -61,7 +61,7 @@ class Agent(object):
       hard_target_update(self.qf, self.qf_target)
 
       # Create optimizer
-      self.qf_optimizer = optim.Adam(self.qf.parameters(), lr=1e-3)
+      self.qf_optimizer = optim.Adam(self.qf.parameters(), lr=1e-4)
 
       # Experience buffer
       self.replay_buffer = ReplayBuffer(self.obs_dim, 1, self.buffer_size)
