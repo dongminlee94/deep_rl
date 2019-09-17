@@ -3,10 +3,9 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 
-from agents.common.mlp import MLP
+from agents.common.mlp import *
 from agents.common.utils import *
 from agents.common.buffer import ReplayBuffer
-from agents.common.exploration import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -22,15 +21,12 @@ class Agent(object):
                 gamma=0.99,
                 epsilon=1.0,
                 epsilon_decay=0.995,
-                entropic_index=0.5,
-                alpha=0.1,
-                select_action=epsilon_greedy,
-                network=MLP,
-                target_update_step=1000,
+                target_update_step=100,
                 buffer_size=int(1e5),
                 batch_size=64,
                 eval_mode=False,
-                q_losses=list()):
+                q_losses=list(),
+                average_losses=dict()):
 
       self.env = env
       self.args = args
@@ -40,38 +36,39 @@ class Agent(object):
       self.gamma = gamma
       self.epsilon = epsilon
       self.epsilon_decay = epsilon_decay
-      self.entropic_index = entropic_index
-      self.alpha = alpha
-      self.select_action = select_action
-      self.network = network
       self.target_update_step = target_update_step
       self.buffer_size = buffer_size
       self.batch_size = batch_size
       self.eval_mode = eval_mode
       self.q_losses = q_losses
+      self.average_losses = average_losses
 
       # Main network
-      self.qf = self.network(self.obs_dim, self.act_num).to(device)
+      self.qf = MLP(self.obs_dim, self.act_num).to(device)
       # Target network
-      self.qf_target = self.network(self.obs_dim, self.act_num).to(device)
+      self.qf_target = MLP(self.obs_dim, self.act_num).to(device)
       
       # Initialize target parameters to match main parameters
       hard_target_update(self.qf, self.qf_target)
 
       # Create optimizer
-      self.qf_optimizer = optim.Adam(self.qf.parameters(), lr=1e-4)
+      self.qf_optimizer = optim.Adam(self.qf.parameters(), lr=1e-3)
 
       # Experience buffer
       self.replay_buffer = ReplayBuffer(self.obs_dim, 1, self.buffer_size)
 
-      # Set exloration mode
-      self.select_action = self._select_action_exploration_mode()
+   def select_action(self, obs):
+      # Decaying epsilon
+      self.epsilon *= self.epsilon_decay
+      self.epsilon = max(self.epsilon, 0.01)
 
-   def _select_action_exploration_mode(self):
-      if self.args.mode == 'eg':
-         return epsilon_greedy
+      if np.random.rand() <= self.epsilon:
+            # Choose a random action with probability epsilon
+         return np.random.randint(self.act_num)
       else:
-         return tsallis_entropy
+         # Choose the action with highest Q-value at the current state
+         q_value = self.qf(obs).argmax()
+         return q_value.detach().cpu().numpy()
 
    def train_model(self):
       batch = self.replay_buffer.sample(self.batch_size)
@@ -96,19 +93,24 @@ class Agent(object):
       if self.args.algo == 'dqn':
          q_backup = rews + self.gamma*(1-done)*q_target.max(1)[0]
          q_backup.to(device)
-
-         if 0: # Check shape of prediction and target
-            print("q", q.shape)
-            print("q_backup", q_backup.shape)
-
-         # DQN loss
-         qf_loss = F.mse_loss(q, q_backup.detach())
-         self.qf_optimizer.zero_grad()
-         qf_loss.backward()
-         self.qf_optimizer.step()
       else: # Double DQN
-         pass
+         q2 = self.qf(obs2)
+         q_target = q_target.gather(1, q2.max(1)[1].unsqueeze(1))
+         
+         q_backup = rews + self.gamma*(1-done)*q_target.max(1)[0]
+         q_backup.to(device)
 
+      if 0: # Check shape of prediction and target
+         print("q", q.shape)
+         print("q_backup", q_backup.shape)
+
+      # Update perdiction network parameter
+      qf_loss = F.mse_loss(q, q_backup.detach())
+      self.qf_optimizer.zero_grad()
+      qf_loss.backward()
+      self.qf_optimizer.step()
+
+      # Save losses
       self.q_losses.append(qf_loss)
 
       # Target parameters 𝜃‾ are synchronized as 𝜃 every N steps
@@ -124,9 +126,6 @@ class Agent(object):
 
       # Keep interacting until we reach a terminal state.
       while not (done or step_number==max_step):
-         if self.args.render:
-            self.env.render() 
-
          self.steps += 1
          
          if self.eval_mode:
@@ -134,19 +133,8 @@ class Agent(object):
             action = q_value.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
-            if self.args.mode == 'eg': # 'eg' = epsilon-greedy
-               # Decaying epsilon
-               self.epsilon *= self.epsilon_decay
-               self.epsilon = max(self.epsilon, 0.01)
-         
-               # Collect experience (s, a, r, s') using some policy
-               action = self.select_action(self.qf, torch.Tensor(obs).to(device), 
-                                                      self.act_num, self.epsilon)
-            else: # tsallis entropy
-               # Collect experience (s, a, r, s') using some policy
-               action = self.select_action(self.qf, torch.Tensor(obs).to(device), 
-                                          self.act_num, self.entropic_index, self.alpha)
-            
+            # Collect experience (s, a, r, s') using some policy
+            action = self.select_action(torch.Tensor(obs).to(device))
             next_obs, reward, done, _ = self.env.step(action)
          
             # Add experience to replay buffer
@@ -159,5 +147,7 @@ class Agent(object):
          total_reward += reward
          step_number += 1
          obs = next_obs
-         
+      
+      # Save total average losses
+      self.average_losses['LossQ'] = round(torch.Tensor(self.q_losses).mean().item(), 10)
       return step_number, total_reward

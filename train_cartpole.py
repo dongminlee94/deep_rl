@@ -8,25 +8,20 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
-parser.add_argument('--env_name', type=str, default='LunarLander-v2')
-parser.add_argument('--seed', type=int, default=0)
+parser.add_argument('--env_name', type=str, default='CartPole-v1')
 parser.add_argument('--algo', type=str, default='dqn')
-parser.add_argument('--load', type=str, default=None)
-parser.add_argument('--render', action='store_true', default=False)
-parser.add_argument('--mode', type=str, default='eg') # 'eg' or 'te'
-parser.add_argument('--q', type=float, default=0.5)
-parser.add_argument('--alpha', type=float, default=0.1)
-parser.add_argument('--training_eps', type=int, default=1500)
-parser.add_argument('--eval_per_train', type=int, default=100)
+parser.add_argument('--training_eps', type=int, default=500)
+parser.add_argument('--eval_per_train', type=int, default=50)
 parser.add_argument('--evaluation_eps', type=int, default=100)
 parser.add_argument('--max_step', type=int, default=500)
-parser.add_argument('--threshold_return', type=int, default=200)
 args = parser.parse_args()
 
 if args.algo == 'dqn':
     from agents.dqn import Agent
-elif args.algo == "ddqn":
-    from agent.dqn import Agent
+elif args.algo == 'ddqn': # Just replace the target of DQN with Double DQN
+    from agents.dqn import Agent
+elif args.algo == 'a2c':
+    from agents.a2c import Agent
 
 def main():
     """Main."""
@@ -38,12 +33,12 @@ def main():
     print('Action numbers:', act_num)
 
     # Set a random seed
-    env.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
+    env.seed(0)
+    np.random.seed(0)
+    torch.manual_seed(0)
 
     # Create an agent
-    agent = Agent(env, args, obs_dim, act_num, entropic_index=args.q, alpha=args.alpha)
+    agent = Agent(env, args, obs_dim, act_num)
 
     # Create a SummaryWriter object by TensorBoard
     writer = SummaryWriter()
@@ -75,7 +70,6 @@ def main():
         if episode > 0 and episode % args.eval_per_train == 0:
             agent.eval_mode = True
             
-            eval_step_count = 0
             eval_sum_returns = 0.
             eval_num_episodes = 0
 
@@ -83,7 +77,6 @@ def main():
                 # Run one episode
                 eval_step_length, eval_episode_return = agent.run(args.max_step)
 
-                eval_step_count += eval_step_length
                 eval_sum_returns += eval_episode_return
                 eval_num_episodes += 1
 
@@ -98,12 +91,12 @@ def main():
             print('AverageReturn:', round(train_average_return, 2))
             print('EvalEpisodes:', eval_num_episodes)
             print('EvalAverageReturn:', round(eval_average_return, 2))
-            print('LossQ:', round(torch.Tensor(agent.q_losses).mean().item(), 3))
+            print('Loss:', agent.average_losses)
             print('Time:', int(time.time() - start_time))
             print('---------------------------------------')
 
             # Threshold return - Solved requirement for success in cartpole environment
-            if eval_average_return >= args.threshold_return:
+            if eval_average_return >= 495:
                 if not os.path.exists('./save_model'):
                     os.mkdir('./save_model')
                 
@@ -113,6 +106,10 @@ def main():
                 
                 if args.algo == 'dqn':
                     torch.save(agent.qf.state_dict(), ckpt_path)
+                elif args.algo == 'ddqn':
+                    torch.save(agent.qf.state_dict(), ckpt_path)
+                elif args.algo == 'a2c':
+                    torch.save(agent.actor.state_dict(), ckpt_path)
                 break
 
 if __name__ == "__main__":
