@@ -8,12 +8,13 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
-parser.add_argument('--env_name', type=str, default='CartPole-v1')
-parser.add_argument('--algo', type=str, default='dqn')
-parser.add_argument('--training_eps', type=int, default=500)
-parser.add_argument('--eval_per_train', type=int, default=50)
+parser.add_argument('--env_name', type=str, default='LunarLanderContinuous-v2')
+parser.add_argument('--algo', type=str, default='ddpg')
+parser.add_argument('--training_eps', type=int, default=1500)
+parser.add_argument('--eval_per_train', type=int, default=100)
 parser.add_argument('--evaluation_eps', type=int, default=100)
 parser.add_argument('--max_step', type=int, default=500)
+parser.add_argument('--threshold_return', type=int, default=200)
 args = parser.parse_args()
 
 if args.algo == 'dqn':
@@ -22,15 +23,26 @@ elif args.algo == 'ddqn': # Just replace the target of DQN with Double DQN
     from agents.dqn import Agent
 elif args.algo == 'a2c':
     from agents.a2c import Agent
+elif args.algo == 'ddpg':
+    from agents.ddpg import Agent
+# elif args.algo == 'sac':
+#     from agents.sac import Agent
+# elif args.algo == 'sac_alpha':
+#     from agents.sac import Agent
+# elif args.algo == 'tac':
+#     from agents.tac import Agent
 
 def main():
     """Main."""
     # Initialize environment
     env = gym.make(args.env_name)
     obs_dim = env.observation_space.shape[0]
-    act_num = env.action_space.n
+    if args.env_name == 'CartPole-v1':
+        act_dim = env.action_space.n
+    elif args.env_name == 'LunarLanderContinuous-v2':
+        act_dim = env.action_sapce.shape[0]
     print('State dimension:', obs_dim)
-    print('Action numbers:', act_num)
+    print('Action dimension:', act_dim)
 
     # Set a random seed
     env.seed(0)
@@ -38,7 +50,7 @@ def main():
     torch.manual_seed(0)
 
     # Create an agent
-    agent = Agent(env, args, obs_dim, act_num)
+    agent = Agent(env, args, obs_dim, act_dim)
 
     # Create a SummaryWriter object by TensorBoard
     writer = SummaryWriter()
@@ -96,7 +108,7 @@ def main():
             print('---------------------------------------')
 
             # Threshold return - Solved requirement for success in cartpole environment
-            if eval_average_return >= 495:
+            if eval_average_return >= args.threshold_return:
                 if not os.path.exists('./save_model'):
                     os.mkdir('./save_model')
                 
@@ -109,6 +121,8 @@ def main():
                 elif args.algo == 'ddqn':
                     torch.save(agent.qf.state_dict(), ckpt_path)
                 elif args.algo == 'a2c':
+                    torch.save(agent.actor.state_dict(), ckpt_path)
+                elif args.algo == 'ddpg':
                     torch.save(agent.actor.state_dict(), ckpt_path)
                 break
 

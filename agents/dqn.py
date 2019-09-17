@@ -16,7 +16,7 @@ class Agent(object):
                 env,
                 args,
                 obs_dim,
-                act_num,
+                act_dim,
                 steps=0,
                 gamma=0.99,
                 epsilon=1.0,
@@ -31,7 +31,7 @@ class Agent(object):
       self.env = env
       self.args = args
       self.obs_dim = obs_dim
-      self.act_num = act_num
+      self.act_dim = act_dim
       self.steps = steps 
       self.gamma = gamma
       self.epsilon = epsilon
@@ -44,9 +44,9 @@ class Agent(object):
       self.average_losses = average_losses
 
       # Main network
-      self.qf = MLP(self.obs_dim, self.act_num).to(device)
+      self.qf = MLP(self.obs_dim, self.act_dim).to(device)
       # Target network
-      self.qf_target = MLP(self.obs_dim, self.act_num).to(device)
+      self.qf_target = MLP(self.obs_dim, self.act_dim).to(device)
       
       # Initialize target parameters to match main parameters
       hard_target_update(self.qf, self.qf_target)
@@ -64,7 +64,7 @@ class Agent(object):
 
       if np.random.rand() <= self.epsilon:
             # Choose a random action with probability epsilon
-         return np.random.randint(self.act_num)
+         return np.random.randint(self.act_dim)
       else:
          # Choose the action with highest Q-value at the current state
          q_value = self.qf(obs).argmax()

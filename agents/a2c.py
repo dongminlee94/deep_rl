@@ -14,7 +14,7 @@ class Agent(object):
                 env,
                 args,
                 obs_dim,
-                act_num,
+                act_dim,
                 steps=0,
                 gamma=0.99,
                 ent_coef=1e-3,
@@ -27,7 +27,7 @@ class Agent(object):
       self.env = env
       self.args = args
       self.obs_dim = obs_dim
-      self.act_num = act_num
+      self.act_dim = act_dim
       self.steps = steps 
       self.gamma = gamma
       self.ent_coef = ent_coef
@@ -38,7 +38,7 @@ class Agent(object):
       self.average_losses = average_losses
 
       # Actor network
-      self.actor = CategoricalDist(self.obs_dim, self.act_num).to(device)
+      self.actor = CategoricalDist(self.obs_dim, self.act_dim).to(device)
       # Critic network
       self.critic = MLP(self.obs_dim, 1).to(device)
       
