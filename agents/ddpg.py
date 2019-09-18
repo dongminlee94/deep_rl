@@ -66,6 +66,7 @@ class Agent(object):
       self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size)
 
    def select_action(self, obs):
+   """Select an action from the set of available actions."""
       action = self.actor(obs).detach().cpu().numpy()
       action += self.act_noise * np.random.randn(self.act_dim)
       return np.clip(action, -self.act_limit, self.act_limit)
@@ -154,6 +155,6 @@ class Agent(object):
          obs = next_obs
       
       # Save total average losses
-      self.average_losses['LossPi'] = round(torch.Tensor(self.actor_losses).mean().item(), 10)
-      self.average_losses['LossV'] = round(torch.Tensor(self.critic_losses).mean().item(), 10)
+      self.average_losses['LossPi'] = round(torch.Tensor(self.actor_losses).mean().item().to(device), 10)
+      self.average_losses['LossQ'] = round(torch.Tensor(self.critic_losses).mean().item().to(device), 10)
       return step_number, total_reward
