@@ -8,13 +8,14 @@ from agents.common.mlp import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of the DQN agent."""
+   """An implementation of the A2C agent."""
 
    def __init__(self,
                 env,
                 args,
                 obs_dim,
                 act_dim,
+                act_limit,
                 steps=0,
                 gamma=0.99,
                 ent_coef=1e-3,
@@ -28,6 +29,7 @@ class Agent(object):
       self.args = args
       self.obs_dim = obs_dim
       self.act_dim = act_dim
+      self.act_limit = act_limit
       self.steps = steps 
       self.gamma = gamma
       self.ent_coef = ent_coef
@@ -56,10 +58,10 @@ class Agent(object):
       log_pi, entropy, v, next_obs, reward, done = self.transition
 
       # Prediction V(s')
-      v2 = self.critic(torch.Tensor(next_obs).to(device))
+      next_v = self.critic(torch.Tensor(next_obs).to(device))
       
       # Target for Q regression
-      q = reward + self.gamma*(1-done)*v2
+      q = reward + self.gamma*(1-done)*next_v
       q.to(device)
 
       # Advantage = Q - V
@@ -99,7 +101,7 @@ class Agent(object):
          
          if self.eval_mode:
             _, _, _, pi = self.actor(torch.Tensor(obs).to(device))
-            action = pi.detach().cpu().numpy().argmax()
+            action = pi.argmax().detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             # Create a transition

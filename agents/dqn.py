@@ -17,12 +17,13 @@ class Agent(object):
                 args,
                 obs_dim,
                 act_dim,
+                act_limit,
                 steps=0,
                 gamma=0.99,
                 epsilon=1.0,
                 epsilon_decay=0.995,
                 target_update_step=100,
-                buffer_size=int(1e5),
+                buffer_size=int(1e4),
                 batch_size=64,
                 eval_mode=False,
                 q_losses=list(),
@@ -32,7 +33,8 @@ class Agent(object):
       self.args = args
       self.obs_dim = obs_dim
       self.act_dim = act_dim
-      self.steps = steps 
+      self.act_limit = act_limit
+      self.steps = steps
       self.gamma = gamma
       self.epsilon = epsilon
       self.epsilon_decay = epsilon_decay

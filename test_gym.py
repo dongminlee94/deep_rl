@@ -7,7 +7,7 @@ from agents.common.mlp import *
 
 # Configurations
 parser = argparse.ArgumentParser()
-parser.add_argument('--env_name', type=str, default='CartPole-v1')
+parser.add_argument('--env', type=str, default='CartPole-v1')
 parser.add_argument('--algo', type=str, default='dqn')
 parser.add_argument('--load', type=str, default=None)
 parser.add_argument('--render', action="store_true", default=True)
@@ -19,7 +19,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def main():
     """Main."""
-    env = gym.make(args.env_name)
+    env = gym.make(args.env)
     obs_dim = env.observation_space.shape[0]
     act_num = env.action_space.n
     print('State dimension:', obs_dim)

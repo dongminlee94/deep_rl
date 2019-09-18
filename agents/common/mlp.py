@@ -4,30 +4,36 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 
 class MLP(nn.Module):
-    def __init__(self, obs_dim, act_dim, hidden_sizes=(64,64), activation=torch.tanh, output_activation=None):
+    def __init__(self, input_size, output_size, hidden_sizes=(64,64), activation=torch.tanh, output_activation=None):
         super(MLP, self).__init__()
-        self.obs_dim = obs_dim
-        self.act_dim = act_dim
+        self.input_size = input_size
+        self.output_size = output_size
         self.hidden_sizes = hidden_sizes
         self.activation = activation
         self.output_activation = output_activation
 
         # Set hidden layers
         self.hidden_layers = nn.ModuleList()
-        input_size = self.obs_dim
+        in_size = self.input_size
         for next_size in self.hidden_sizes:
-            fc = nn.Linear(input_size, next_size)
-            input_size = next_size
+            fc = nn.Linear(in_size, next_size)
+            in_size = next_size
             self.hidden_layers.append(fc)
 
         # Set output layers
-        self.output_layer = nn.Linear(input_size, self.act_dim)
+        self.output_layer = nn.Linear(in_size, self.output_size)
 
     def forward(self, x):
         for hidden_layer in self.hidden_layers:
             x = self.activation(hidden_layer(x))
         x = self.output_layer(x)
         return x
+
+
+class FlattenMLP(MLP):
+    def forward(self, x, a):
+        q = torch.cat([x,a], dim=-1)
+        return super(FlattenMLP, self).forward(q)
 
 
 class CategoricalDist(MLP):

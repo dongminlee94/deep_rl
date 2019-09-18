@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
-parser.add_argument('--env_name', type=str, default='LunarLanderContinuous-v2')
+parser.add_argument('--env', type=str, default='LunarLanderContinuous-v2')
 parser.add_argument('--algo', type=str, default='ddpg')
 parser.add_argument('--training_eps', type=int, default=1500)
 parser.add_argument('--eval_per_train', type=int, default=100)
@@ -35,12 +35,13 @@ elif args.algo == 'ddpg':
 def main():
     """Main."""
     # Initialize environment
-    env = gym.make(args.env_name)
+    env = gym.make(args.env)
     obs_dim = env.observation_space.shape[0]
-    if args.env_name == 'CartPole-v1':
+    if args.env == 'CartPole-v1':
         act_dim = env.action_space.n
-    elif args.env_name == 'LunarLanderContinuous-v2':
-        act_dim = env.action_sapce.shape[0]
+    elif args.env == 'LunarLanderContinuous-v2':
+        act_dim = env.action_space.shape[0]
+    act_limit = env.action_space.high[0]
     print('State dimension:', obs_dim)
     print('Action dimension:', act_dim)
 
@@ -50,7 +51,7 @@ def main():
     torch.manual_seed(0)
 
     # Create an agent
-    agent = Agent(env, args, obs_dim, act_dim)
+    agent = Agent(env, args, obs_dim, act_dim, act_limit)
 
     # Create a SummaryWriter object by TensorBoard
     writer = SummaryWriter()
@@ -112,7 +113,7 @@ def main():
                 if not os.path.exists('./save_model'):
                     os.mkdir('./save_model')
                 
-                save_name = args.env_name + '_' + args.algo
+                save_name = args.env + '_' + args.algo
                 ckpt_path = os.path.join('./save_model/' + save_name + '_rt_' + str(round(train_average_return, 2)) \
                                                                     + '_ep_' + str(train_num_episodes) + '.pt')
                 
