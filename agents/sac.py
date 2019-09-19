@@ -11,7 +11,7 @@ from agents.common.buffer import ReplayBuffer
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of the DDPG agent."""
+   """An implementation of the SAC agent."""
 
    def __init__(self,
                 env,
@@ -21,14 +21,13 @@ class Agent(object):
                 act_limit,
                 steps=0,
                 gamma=0.99,
-                act_noise=0.015,
+                alpha=0.2,
                 buffer_size=int(1e4),
                 batch_size=64,
-                gradient_clip_ac=0.5,
-                gradient_clip_cr=1.0,
                 eval_mode=False,
                 actor_losses=list(),
                 critic_losses=list(),
+                entropies=list(),
                 average_losses=dict(),
    ):
 
@@ -39,22 +38,20 @@ class Agent(object):
       self.act_limit = act_limit
       self.steps = steps 
       self.gamma = gamma
-      self.act_noise = act_noise
+      self.alpha = alpha
       self.buffer_size = buffer_size
       self.batch_size = batch_size
-      self.gradient_clip_ac = gradient_clip_ac
-      self.gradient_clip_cr = gradient_clip_cr
       self.eval_mode = eval_mode
       self.actor_losses = actor_losses
       self.critic_losses = critic_losses
       self.average_losses = average_losses
 
       # Main network
-      self.actor = MLP(self.obs_dim, self.act_dim, hidden_sizes=(256,256), output_activation=torch.tanh).to(device)
-      self.critic = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
+      self.actor = GaussianPolicy(self.obs_dim, self.act_dim).to(device)
+      self.qf = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
+      self.vf = MLP(self.obs_dim, 1, hidden_sizes=(256,256)).to(device)
       # Target network
-      self.actor_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=(256,256), output_activation=torch.tanh).to(device)
-      self.critic_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
+      self.vf_target = MLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
       
       # Initialize target parameters to match main parameters
       hard_target_update(self.actor, self.actor_target)

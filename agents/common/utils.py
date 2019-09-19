@@ -1,5 +1,9 @@
 import torch
 
+def identity(x):
+    """Return input without any change."""
+    return x
+
 def hard_target_update(main, target):
     target.load_state_dict(main.state_dict())
 

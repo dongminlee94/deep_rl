@@ -23,7 +23,8 @@ class Agent(object):
                 actor_losses=list(),
                 critic_losses=list(),
                 entropies=list(),
-                average_losses=dict()):
+                average_losses=dict(),
+   ):
 
       self.env = env
       self.args = args
@@ -40,7 +41,7 @@ class Agent(object):
       self.average_losses = average_losses
 
       # Actor network
-      self.actor = CategoricalDist(self.obs_dim, self.act_dim).to(device)
+      self.actor = CategoricalPolicy(self.obs_dim, self.act_dim).to(device)
       # Critic network
       self.critic = MLP(self.obs_dim, 1).to(device)
       
@@ -49,7 +50,7 @@ class Agent(object):
       self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=1e-3)
       
    def select_action(self, obs):
-   """Select an action from the set of available actions."""
+      """Select an action from the set of available actions."""
       action, log_pi, entropy, _  = self.actor(obs)
       v = self.critic(obs)
       self.transition.extend([log_pi, entropy, v])
@@ -121,7 +122,7 @@ class Agent(object):
          obs = next_obs
       
       # Save total average losses
-      self.average_losses['LossPi'] = round(torch.Tensor(self.actor_losses).mean().item().to(device), 10)
-      self.average_losses['LossV'] = round(torch.Tensor(self.critic_losses).mean().item().to(device), 10)
-      self.average_losses['Entropy'] = round(torch.Tensor(self.entropies).mean().item().to(device), 10)
+      self.average_losses['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 10)
+      self.average_losses['LossV'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 10)
+      self.average_losses['Entropy'] = round(torch.Tensor(self.entropies).to(device).mean().item(), 10)
       return step_number, total_reward

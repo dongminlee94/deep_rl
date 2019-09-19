@@ -8,13 +8,20 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
-parser.add_argument('--env', type=str, default='LunarLanderContinuous-v2')
-parser.add_argument('--algo', type=str, default='ddpg')
-parser.add_argument('--training_eps', type=int, default=1500)
-parser.add_argument('--eval_per_train', type=int, default=100)
-parser.add_argument('--evaluation_eps', type=int, default=100)
-parser.add_argument('--max_step', type=int, default=500)
-parser.add_argument('--threshold_return', type=int, default=200)
+parser.add_argument('--env', type=str, default='LunarLanderContinuous-v2', 
+                    help='choose an environment between CartPole-v1 and LunarLanderContinuous-v2')
+parser.add_argument('--algo', type=str, default='ddpg', 
+                    help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, sac_alpha, tac')
+parser.add_argument('--training_eps', type=int, default=2000, 
+                    help='training episode number (CartPole: 1000, LunarLanderContinuous: 2000)')
+parser.add_argument('--eval_per_train', type=int, default=200, 
+                    help='evaluation number per training (CartPole: 100, LunarLanderContinuous: 200)')
+parser.add_argument('--evaluation_eps', type=int, default=100,
+                    help='evaluation episode number (CartPole: 100, LunarLanderContinuous: 100)')
+parser.add_argument('--max_step', type=int, default=300,
+                    help='max episode step (CartPole: 500, LunarLanderContinuous: 300)')
+parser.add_argument('--threshold_return', type=int, default=190,
+                    help='solved requirement for success in given environment (CartPole: 495, LunarLanderContinuous: 190)')
 args = parser.parse_args()
 
 if args.algo == 'dqn':
@@ -25,8 +32,8 @@ elif args.algo == 'a2c':
     from agents.a2c import Agent
 elif args.algo == 'ddpg':
     from agents.ddpg import Agent
-# elif args.algo == 'sac':
-#     from agents.sac import Agent
+elif args.algo == 'sac':
+    from agents.sac import Agent
 # elif args.algo == 'sac_alpha':
 #     from agents.sac import Agent
 # elif args.algo == 'tac':
@@ -78,6 +85,7 @@ def main():
 
         # Log experiment result for training episodes
         writer.add_scalar('Train/AverageReturns', train_average_return, episode)
+        writer.add_scalar('Train/EpisodeReturns', train_episode_return, episode)
 
         # Perform the evaluation phase -- no learning
         if episode > 0 and episode % args.eval_per_train == 0:
@@ -97,6 +105,7 @@ def main():
 
                 # Log experiment result for evaluation episodes
                 writer.add_scalar('Eval/AverageReturns', eval_average_return, episode)
+                writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, episode)
 
             print('---------------------------------------')
             print('Episodes:', train_num_episodes)
@@ -108,22 +117,19 @@ def main():
             print('Time:', int(time.time() - start_time))
             print('---------------------------------------')
 
-            # Threshold return - Solved requirement for success in cartpole environment
+            # Save a training model
             if eval_average_return >= args.threshold_return:
                 if not os.path.exists('./save_model'):
                     os.mkdir('./save_model')
                 
                 save_name = args.env + '_' + args.algo
                 ckpt_path = os.path.join('./save_model/' + save_name + '_rt_' + str(round(train_average_return, 2)) \
-                                                                    + '_ep_' + str(train_num_episodes) + '.pt')
+                                                                    + '_ep_' + str(train_num_episodes) \
+                                                                    + '_t_' + str(int(time.time() - start_time)) + '.pt')
                 
-                if args.algo == 'dqn':
+                if args.algo == 'dqn' or args.algo == 'ddqn':
                     torch.save(agent.qf.state_dict(), ckpt_path)
-                elif args.algo == 'ddqn':
-                    torch.save(agent.qf.state_dict(), ckpt_path)
-                elif args.algo == 'a2c':
-                    torch.save(agent.actor.state_dict(), ckpt_path)
-                elif args.algo == 'ddpg':
+                else:
                     torch.save(agent.actor.state_dict(), ckpt_path)
                 break
 

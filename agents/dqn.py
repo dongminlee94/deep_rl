@@ -27,7 +27,8 @@ class Agent(object):
                 batch_size=64,
                 eval_mode=False,
                 q_losses=list(),
-                average_losses=dict()):
+                average_losses=dict(),
+   ):
 
       self.env = env
       self.args = args
@@ -60,7 +61,7 @@ class Agent(object):
       self.replay_buffer = ReplayBuffer(self.obs_dim, 1, self.buffer_size)
 
    def select_action(self, obs):
-   """Select an action from the set of available actions."""
+      """Select an action from the set of available actions."""
       # Decaying epsilon
       self.epsilon *= self.epsilon_decay
       self.epsilon = max(self.epsilon, 0.01)
@@ -152,5 +153,5 @@ class Agent(object):
          obs = next_obs
       
       # Save total average losses
-      self.average_losses['LossQ'] = round(torch.Tensor(self.q_losses).mean().item().to(device), 10)
+      self.average_losses['LossQ'] = round(torch.Tensor(self.q_losses).to(device).mean().item(), 10)
       return step_number, total_reward
