@@ -21,13 +21,16 @@ class Agent(object):
                 act_limit,
                 steps=0,
                 gamma=0.99,
-                alpha=0.2,
+                alpha=0.01,
+                automatic_entropy_tuning=False,
                 buffer_size=int(1e4),
                 batch_size=64,
                 eval_mode=False,
                 actor_losses=list(),
-                critic_losses=list(),
-                entropies=list(),
+                qf1_losses=list(),
+                qf2_losses=list(),
+                vf_losses=list(),
+                log_pis=list(),
                 average_losses=dict(),
    ):
 
@@ -39,36 +42,36 @@ class Agent(object):
       self.steps = steps 
       self.gamma = gamma
       self.alpha = alpha
+      self.automatic_entropy_tuning = automatic_entropy_tuning
       self.buffer_size = buffer_size
       self.batch_size = batch_size
       self.eval_mode = eval_mode
       self.actor_losses = actor_losses
-      self.critic_losses = critic_losses
+      self.qf1_losses = qf1_losses
+      self.qf2_losses = qf2_losses
+      self.vf_losses = vf_losses
+      self.log_pis = log_pis
       self.average_losses = average_losses
 
       # Main network
       self.actor = GaussianPolicy(self.obs_dim, self.act_dim).to(device)
-      self.qf = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
+      self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
+      self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
       self.vf = MLP(self.obs_dim, 1, hidden_sizes=(256,256)).to(device)
       # Target network
-      self.vf_target = MLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
+      self.vf_target = MLP(self.obs_dim, 1, hidden_sizes=(256,256)).to(device)
       
       # Initialize target parameters to match main parameters
-      hard_target_update(self.actor, self.actor_target)
-      hard_target_update(self.critic, self.critic_target)
+      hard_target_update(self.vf, self.vf_target)
 
       # Create optimizers
       self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=3e-4)
-      self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=3e-4)
+      self.qf1_optimizer = optim.Adam(self.qf1.parameters(), lr=3e-4)
+      self.qf2_optimizer = optim.Adam(self.qf2.parameters(), lr=3e-4)
+      self.vf_optimizer = optim.Adam(self.vf.parameters(), lr=3e-4)
       
       # Experience buffer
       self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size)
-
-   def select_action(self, obs):
-      """Select an action from the set of available actions."""
-      action = self.actor(obs).detach().cpu().numpy()
-      action += self.act_noise * np.random.randn(self.act_dim)
-      return np.clip(action, -self.act_limit, self.act_limit)
 
    def train_model(self):
       batch = self.replay_buffer.sample(self.batch_size)
@@ -85,44 +88,66 @@ class Agent(object):
          print("rews", rews.shape)
          print("done", done.shape)
 
-      # Actor prediction Q(s,π(s))
-      pi = self.actor(obs1)
-      q_pi = self.critic(obs1, pi)
-      
-      # Critic prediction Q(s,a), Q‾(s',π‾(s'))
-      q = self.critic(obs1, acts).squeeze(1)
-      pi_target = self.actor_target(obs2)
-      q_pi_target = self.critic_target(obs2, pi_target).squeeze(1)
-      
-      # Target for Q regression
-      q_backup = rews + self.gamma*(1-done)*q_pi_target
+      # Prediction logπ(s), Q1(s,a), Q2(s,a), V(s), V‾(s')
+      _, pi, log_pi = self.actor(obs1)
+      v = self.vf(obs1).squeeze(1)
+      v_target = self.vf_target(obs2).squeeze(1)
+      q1 = self.qf1(obs1, acts).squeeze(1)
+      q2 = self.qf2(obs1, acts).squeeze(1)
+
+      # Min Double-Q:
+      min_q_pi = torch.min(self.qf1(obs1, pi), self.qf2(obs1, pi)).squeeze(1).to(device)
+
+      # Targets for Q and V regression
+      v_backup = min_q_pi - self.alpha*log_pi
+      v_backup.to(device)
+      q_backup = rews + self.gamma*(1-done)*v_target
       q_backup.to(device)
 
       if 0: # Check shape of prediction and target
-         print("q", q.shape)
+         print("log_pi", log_pi.shape)
+         print("v", v.shape)
+         print("v_target", v_target.shape)
+         print("q1", q1.shape)
+         print("q2", q2.shape)
+         print("min_q_pi", min_q_pi.shape)
+         print("v_backup", v_backup.shape)
          print("q_backup", q_backup.shape)
 
-      # Update critic network parameter
-      critic_loss = F.mse_loss(q, q_backup.detach())
-      self.critic_optimizer.zero_grad()
-      critic_loss.backward()
-      nn.utils.clip_grad_norm_(self.critic.parameters(), self.gradient_clip_cr)
-      self.critic_optimizer.step()
+      # Soft actor-critic losses
+      vf_loss = F.mse_loss(v, v_backup.detach())
+      qf1_loss = F.mse_loss(q1, q_backup.detach())
+      qf2_loss = F.mse_loss(q2, q_backup.detach())
+      actor_loss = (self.alpha*log_pi - min_q_pi).mean()
+
+      # Update value network parameter
+      self.vf_optimizer.zero_grad()
+      vf_loss.backward()
+      self.vf_optimizer.step()
+      
+      # Update two Q network parameter
+      self.qf1_optimizer.zero_grad()
+      qf1_loss.backward()
+      self.qf1_optimizer.step()
+
+      self.qf2_optimizer.zero_grad()
+      qf2_loss.backward()
+      self.qf2_optimizer.step()
       
       # Update actor network parameter
-      actor_loss = -q_pi.mean()
       self.actor_optimizer.zero_grad()
       actor_loss.backward()
-      nn.utils.clip_grad_norm_(self.actor.parameters(), self.gradient_clip_ac)
       self.actor_optimizer.step()
 
-      # Save losses & entropies
+      # Save loss & logpi
       self.actor_losses.append(actor_loss)
-      self.critic_losses.append(critic_loss)
+      self.qf1_losses.append(qf1_loss)
+      self.qf2_losses.append(qf2_loss)
+      self.vf_losses.append(vf_loss)
+      self.log_pis.append(log_pi.mean())
 
       # Polyak averaging for target parameter
-      soft_target_update(self.actor, self.actor_target)
-      soft_target_update(self.critic, self.critic_target)
+      soft_target_update(self.vf, self.vf_target)
 
    def run(self, max_step):
       step_number = 0
@@ -136,12 +161,13 @@ class Agent(object):
          self.steps += 1
          
          if self.eval_mode:
-            action = self.actor(torch.Tensor(obs).to(device))
+            action, _, _ = self.actor(torch.Tensor(obs).to(device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             # Collect experience (s, a, r, s') using some policy
-            action = self.select_action(torch.Tensor(obs).to(device))
+            _, action, _ = self.actor(torch.Tensor(obs).to(device))
+            action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to replay buffer
@@ -157,5 +183,8 @@ class Agent(object):
       
       # Save total average losses
       self.average_losses['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 10)
-      self.average_losses['LossQ'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 10)
+      self.average_losses['LossQ1'] = round(torch.Tensor(self.qf1_losses).to(device).mean().item(), 10)
+      self.average_losses['LossQ2'] = round(torch.Tensor(self.qf2_losses).to(device).mean().item(), 10)
+      self.average_losses['LossV'] = round(torch.Tensor(self.vf_losses).to(device).mean().item(), 10)
+      self.average_losses['LogPi'] = round(torch.Tensor(self.log_pis).to(device).mean().item(), 10)
       return step_number, total_reward

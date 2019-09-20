@@ -48,7 +48,7 @@ class MLP(nn.Module):
 
 
 """
-DDPG critic, SAC qf, SAC_alpha qf
+DDPG critic, SAC qf
 """
 class FlattenMLP(MLP):
     def forward(self, x, a):
@@ -72,7 +72,7 @@ class CategoricalPolicy(MLP):
 
 
 """
-SAC actor, SAC_alpha actor
+SAC actor
 """
 LOG_STD_MAX = 2
 LOG_STD_MIN = -20
@@ -102,11 +102,13 @@ class GaussianPolicy(MLP):
         clip_value = (u - x)*clip_up + (l - x)*clip_low
         return x + clip_value.detach()
 
-    def apply_squashing_func(self, mu, pi, logp_pi):
+    def apply_squashing_func(self, mu, pi, log_pi):
         mu = torch.tanh(mu)
         pi = torch.tanh(pi)
         # To avoid evil machine precision error, strictly clip 1-pi**2 to [0,1] range.
-        logp_pi -= torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi**2, l=0., u=1.) + 1e-6), dim=1)
+        log_pi -= torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6)
+        log_pi = log_pi.sum(dim=-1)
+        return mu, pi, log_pi
         
     def forward(self, x):
         x = super(GaussianPolicy, self).forward(x)
@@ -119,7 +121,6 @@ class GaussianPolicy(MLP):
         dist = Normal(mu, std)
         pi = dist.rsample()
         log_pi = dist.log_prob(pi)
-        entropy = dist.entropy()
 
         mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
-        return mu, pi, log_pi, entropy
+        return mu, pi, log_pi

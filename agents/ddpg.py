@@ -68,7 +68,6 @@ class Agent(object):
       self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size)
 
    def select_action(self, obs):
-      """Select an action from the set of available actions."""
       action = self.actor(obs).detach().cpu().numpy()
       action += self.act_noise * np.random.randn(self.act_dim)
       return np.clip(action, -self.act_limit, self.act_limit)
@@ -119,7 +118,7 @@ class Agent(object):
       nn.utils.clip_grad_norm_(self.actor.parameters(), self.gradient_clip_ac)
       self.actor_optimizer.step()
 
-      # Save losses & entropies
+      # Save loss
       self.actor_losses.append(actor_loss)
       self.critic_losses.append(critic_loss)
 

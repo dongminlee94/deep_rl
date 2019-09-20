@@ -10,18 +10,19 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
 parser.add_argument('--env', type=str, default='LunarLanderContinuous-v2', 
                     help='choose an environment between CartPole-v1 and LunarLanderContinuous-v2')
-parser.add_argument('--algo', type=str, default='ddpg', 
-                    help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, sac_alpha, tac')
-parser.add_argument('--training_eps', type=int, default=2000, 
-                    help='training episode number (CartPole: 1000, LunarLanderContinuous: 2000)')
-parser.add_argument('--eval_per_train', type=int, default=200, 
-                    help='evaluation number per training (CartPole: 100, LunarLanderContinuous: 200)')
+parser.add_argument('--algo', type=str, default='sac', 
+                    help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, asac, tac')
+parser.add_argument('--alpha', type=float, default=0.1)
+parser.add_argument('--training_eps', type=int, default=1500, 
+                    help='training episode number (CartPole: 500, LunarLanderContinuous: 1500)')
+parser.add_argument('--eval_per_train', type=int, default=150, 
+                    help='evaluation number per training (CartPole: 50, LunarLanderContinuous: 150)')
 parser.add_argument('--evaluation_eps', type=int, default=100,
                     help='evaluation episode number (CartPole: 100, LunarLanderContinuous: 100)')
 parser.add_argument('--max_step', type=int, default=300,
                     help='max episode step (CartPole: 500, LunarLanderContinuous: 300)')
 parser.add_argument('--threshold_return', type=int, default=190,
-                    help='solved requirement for success in given environment (CartPole: 495, LunarLanderContinuous: 190)')
+                    help='solved requirement for success in given environment (CartPole: 490, LunarLanderContinuous: 190)')
 args = parser.parse_args()
 
 if args.algo == 'dqn':
@@ -34,8 +35,8 @@ elif args.algo == 'ddpg':
     from agents.ddpg import Agent
 elif args.algo == 'sac':
     from agents.sac import Agent
-# elif args.algo == 'sac_alpha':
-#     from agents.sac import Agent
+elif args.algo == 'asac': # Automating entropy adjustment on SAC
+    from agents.sac import Agent
 # elif args.algo == 'tac':
 #     from agents.tac import Agent
 
@@ -46,9 +47,10 @@ def main():
     obs_dim = env.observation_space.shape[0]
     if args.env == 'CartPole-v1':
         act_dim = env.action_space.n
+        act_limit = None
     elif args.env == 'LunarLanderContinuous-v2':
         act_dim = env.action_space.shape[0]
-    act_limit = env.action_space.high[0]
+        act_limit = env.action_space.high[0]
     print('State dimension:', obs_dim)
     print('Action dimension:', act_dim)
 
@@ -58,7 +60,7 @@ def main():
     torch.manual_seed(0)
 
     # Create an agent
-    agent = Agent(env, args, obs_dim, act_dim, act_limit)
+    agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=args.alpha)
 
     # Create a SummaryWriter object by TensorBoard
     writer = SummaryWriter()

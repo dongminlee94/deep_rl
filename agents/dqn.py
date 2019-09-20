@@ -71,8 +71,8 @@ class Agent(object):
          return np.random.randint(self.act_dim)
       else:
          # Choose the action with highest Q-value at the current state
-         q_value = self.qf(obs).argmax()
-         return q_value.detach().cpu().numpy()
+         action = self.qf(obs).argmax()
+         return action.detach().cpu().numpy()
 
    def train_model(self):
       batch = self.replay_buffer.sample(self.batch_size)
@@ -114,7 +114,7 @@ class Agent(object):
       qf_loss.backward()
       self.qf_optimizer.step()
 
-      # Save losses
+      # Save loss
       self.q_losses.append(qf_loss)
 
       # Target parameters 𝜃‾ are synchronized as 𝜃 every N steps

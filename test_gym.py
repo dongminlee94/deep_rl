@@ -35,7 +35,7 @@ def main():
     if args.algo == 'dqn' or args.algo == 'ddqn':
         mlp = MLP(obs_dim, act_dim).to(device)
     elif args.algo == 'a2c':
-        mlp = CategoricalPolicy(obs_dim, act_dim).to(device)
+        mlp = CategoricalPolicy(obs_dim, act_dim, activation=torch.tanh).to(device)
     elif args.algo == 'ddpg':
         mlp = MLP(obs_dim, act_dim, hidden_sizes=(256,256), output_activation=torch.tanh).to(device)
     elif args.algo == 'sac' or args.algo == 'sac_alpha':

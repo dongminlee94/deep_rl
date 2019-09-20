@@ -41,9 +41,9 @@ class Agent(object):
       self.average_losses = average_losses
 
       # Actor network
-      self.actor = CategoricalPolicy(self.obs_dim, self.act_dim).to(device)
+      self.actor = CategoricalPolicy(self.obs_dim, self.act_dim, activation=torch.tanh).to(device)
       # Critic network
-      self.critic = MLP(self.obs_dim, 1).to(device)
+      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(device)
       
       # Create optimizers
       self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=1e-4)
@@ -85,7 +85,7 @@ class Agent(object):
       actor_loss.backward()
       self.actor_optimizer.step()
 
-      # Save losses & entropies
+      # Save loss & entropy
       self.actor_losses.append(actor_loss)
       self.critic_losses.append(critic_loss)
       self.entropies.append(entropy)
