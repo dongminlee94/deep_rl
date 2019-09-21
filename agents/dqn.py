@@ -152,6 +152,6 @@ class Agent(object):
          step_number += 1
          obs = next_obs
       
-      # Save total average losses
+      # Save total average loss
       self.average_losses['LossQ'] = round(torch.Tensor(self.q_losses).to(device).mean().item(), 10)
       return step_number, total_reward

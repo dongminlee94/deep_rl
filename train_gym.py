@@ -12,9 +12,8 @@ parser.add_argument('--env', type=str, default='LunarLanderContinuous-v2',
                     help='choose an environment between CartPole-v1 and LunarLanderContinuous-v2')
 parser.add_argument('--algo', type=str, default='sac', 
                     help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, asac, tac')
-parser.add_argument('--alpha', type=float, default=0.1)
-parser.add_argument('--training_eps', type=int, default=1500, 
-                    help='training episode number (CartPole: 500, LunarLanderContinuous: 1500)')
+parser.add_argument('--training_eps', type=int, default=900, 
+                    help='training episode number (CartPole: 500, LunarLanderContinuous: 900)')
 parser.add_argument('--eval_per_train', type=int, default=150, 
                     help='evaluation number per training (CartPole: 50, LunarLanderContinuous: 150)')
 parser.add_argument('--evaluation_eps', type=int, default=100,
@@ -60,10 +59,11 @@ def main():
     torch.manual_seed(0)
 
     # Create an agent
-    agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=args.alpha)
+    agent = Agent(env, args, obs_dim, act_dim, act_limit)
 
     # Create a SummaryWriter object by TensorBoard
-    writer = SummaryWriter()
+    dir_name = 'runs/' + args.env + '_' + args.algo + '_' + time.ctime() + '_alpha_' + str(0.02)
+    writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
 

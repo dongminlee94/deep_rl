@@ -9,8 +9,8 @@ from agents.common.mlp import *
 parser = argparse.ArgumentParser()
 parser.add_argument('--env', type=str, default='LunarLanderContinuous-v2', 
                     help='choose an environment between CartPole-v1 and LunarLanderContinuous-v2')
-parser.add_argument('--algo', type=str, default='ddpg',
-                    help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, sac_alpha, tac')
+parser.add_argument('--algo', type=str, default='sac',
+                    help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, asac, tac')
 parser.add_argument('--load', type=str, default=None,
                     help='load the saved model')
 parser.add_argument('--render', action="store_true", default=True,
@@ -38,7 +38,7 @@ def main():
         mlp = CategoricalPolicy(obs_dim, act_dim, activation=torch.tanh).to(device)
     elif args.algo == 'ddpg':
         mlp = MLP(obs_dim, act_dim, hidden_sizes=(256,256), output_activation=torch.tanh).to(device)
-    elif args.algo == 'sac' or args.algo == 'sac_alpha':
+    elif args.algo == 'sac' or args.algo == 'asac':
         mlp = GaussianPolicy(obs_dim, act_dim).to(device)
 
     if args.load is not None:
@@ -68,7 +68,8 @@ def main():
             elif args.algo == 'ddpg':
                 action = mlp(torch.Tensor(obs).to(device)).detach().cpu().numpy()
             elif args.algo == 'sac' or args.algo == 'sac_alpha':
-                action, _, _, _ = mlp(torch.Tensor(obs).to(device)).detach().cpu().numpy()
+                action, _, _ = mlp(torch.Tensor(obs).to(device))
+                action = action.detach().cpu().numpy()
             # elif args.algo == 'tac':
             #     action = mlp(torch.Tensor(obs).to(device)).detach().cpu().numpy()
             

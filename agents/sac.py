@@ -21,7 +21,7 @@ class Agent(object):
                 act_limit,
                 steps=0,
                 gamma=0.99,
-                alpha=0.01,
+                alpha=0.05,
                 automatic_entropy_tuning=False,
                 buffer_size=int(1e4),
                 batch_size=64,
@@ -30,7 +30,6 @@ class Agent(object):
                 qf1_losses=list(),
                 qf2_losses=list(),
                 vf_losses=list(),
-                log_pis=list(),
                 average_losses=dict(),
    ):
 
@@ -50,7 +49,6 @@ class Agent(object):
       self.qf1_losses = qf1_losses
       self.qf2_losses = qf2_losses
       self.vf_losses = vf_losses
-      self.log_pis = log_pis
       self.average_losses = average_losses
 
       # Main network
@@ -90,41 +88,36 @@ class Agent(object):
 
       # Prediction logπ(s), Q1(s,a), Q2(s,a), V(s), V‾(s')
       _, pi, log_pi = self.actor(obs1)
-      v = self.vf(obs1).squeeze(1)
-      v_target = self.vf_target(obs2).squeeze(1)
       q1 = self.qf1(obs1, acts).squeeze(1)
       q2 = self.qf2(obs1, acts).squeeze(1)
+      v = self.vf(obs1).squeeze(1)
+      v_target = self.vf_target(obs2).squeeze(1)
 
       # Min Double-Q:
       min_q_pi = torch.min(self.qf1(obs1, pi), self.qf2(obs1, pi)).squeeze(1).to(device)
 
       # Targets for Q and V regression
-      v_backup = min_q_pi - self.alpha*log_pi
-      v_backup.to(device)
       q_backup = rews + self.gamma*(1-done)*v_target
       q_backup.to(device)
+      v_backup = min_q_pi - self.alpha*log_pi
+      v_backup.to(device)
 
       if 0: # Check shape of prediction and target
          print("log_pi", log_pi.shape)
-         print("v", v.shape)
-         print("v_target", v_target.shape)
          print("q1", q1.shape)
          print("q2", q2.shape)
+         print("v", v.shape)
+         print("v_target", v_target.shape)
          print("min_q_pi", min_q_pi.shape)
-         print("v_backup", v_backup.shape)
          print("q_backup", q_backup.shape)
+         print("v_backup", v_backup.shape)
 
       # Soft actor-critic losses
-      vf_loss = F.mse_loss(v, v_backup.detach())
       qf1_loss = F.mse_loss(q1, q_backup.detach())
       qf2_loss = F.mse_loss(q2, q_backup.detach())
+      vf_loss = F.mse_loss(v, v_backup.detach())
       actor_loss = (self.alpha*log_pi - min_q_pi).mean()
 
-      # Update value network parameter
-      self.vf_optimizer.zero_grad()
-      vf_loss.backward()
-      self.vf_optimizer.step()
-      
       # Update two Q network parameter
       self.qf1_optimizer.zero_grad()
       qf1_loss.backward()
@@ -133,6 +126,11 @@ class Agent(object):
       self.qf2_optimizer.zero_grad()
       qf2_loss.backward()
       self.qf2_optimizer.step()
+      
+      # Update value network parameter
+      self.vf_optimizer.zero_grad()
+      vf_loss.backward()
+      self.vf_optimizer.step()
       
       # Update actor network parameter
       self.actor_optimizer.zero_grad()
@@ -144,7 +142,6 @@ class Agent(object):
       self.qf1_losses.append(qf1_loss)
       self.qf2_losses.append(qf2_loss)
       self.vf_losses.append(vf_loss)
-      self.log_pis.append(log_pi.mean())
 
       # Polyak averaging for target parameter
       soft_target_update(self.vf, self.vf_target)
@@ -186,5 +183,4 @@ class Agent(object):
       self.average_losses['LossQ1'] = round(torch.Tensor(self.qf1_losses).to(device).mean().item(), 10)
       self.average_losses['LossQ2'] = round(torch.Tensor(self.qf2_losses).to(device).mean().item(), 10)
       self.average_losses['LossV'] = round(torch.Tensor(self.vf_losses).to(device).mean().item(), 10)
-      self.average_losses['LogPi'] = round(torch.Tensor(self.log_pis).to(device).mean().item(), 10)
       return step_number, total_reward
