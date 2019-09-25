@@ -6,7 +6,7 @@ from agents.common.utils import identity
 
 
 """
-DQN, DDQN, A2C critic, DDPG actor, SAC vf
+DQN, DDQN, A2C critic, DDPG actor
 """
 class MLP(nn.Module):
     def __init__(self, 
@@ -81,7 +81,7 @@ class GaussianPolicy(MLP):
     def __init__(self, 
                  input_size, 
                  output_size, 
-                 hidden_sizes=(256,256),
+                 hidden_sizes=(64,64),
     ):
         super(GaussianPolicy, self).__init__(
             input_size=input_size,

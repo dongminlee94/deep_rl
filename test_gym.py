@@ -7,9 +7,9 @@ from agents.common.mlp import *
 
 # Configurations
 parser = argparse.ArgumentParser()
-parser.add_argument('--env', type=str, default='LunarLanderContinuous-v2', 
-                    help='choose an environment between CartPole-v1 and LunarLanderContinuous-v2')
-parser.add_argument('--algo', type=str, default='sac',
+parser.add_argument('--env', type=str, default='CartPole-v1', 
+                    help='choose an environment between CartPole-v1 and Pendulum-v0')
+parser.add_argument('--algo', type=str, default='dqn',
                     help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, asac, tac')
 parser.add_argument('--load', type=str, default=None,
                     help='load the saved model')
@@ -27,7 +27,7 @@ def main():
     obs_dim = env.observation_space.shape[0]
     if args.env == 'CartPole-v1':
         act_dim = env.action_space.n
-    elif args.env == 'LunarLanderContinuous-v2':
+    elif args.env == 'Pendulum-v0':
         act_dim = env.action_space.shape[0]
     print('State dimension:', obs_dim)
     print('Action dimension:', act_dim)
@@ -37,9 +37,9 @@ def main():
     elif args.algo == 'a2c':
         mlp = CategoricalPolicy(obs_dim, act_dim, activation=torch.tanh).to(device)
     elif args.algo == 'ddpg':
-        mlp = MLP(obs_dim, act_dim, hidden_sizes=(256,256), output_activation=torch.tanh).to(device)
+        mlp = MLP(obs_dim, act_dim, hidden_sizes=(128,128), output_activation=torch.tanh).to(device)
     elif args.algo == 'sac' or args.algo == 'asac':
-        mlp = GaussianPolicy(obs_dim, act_dim).to(device)
+        mlp = GaussianPolicy(obs_dim, act_dim, hidden_sizes=(128,128)).to(device)
 
     if args.load is not None:
         pretrained_model_path = os.path.join('./save_model/' + str(args.load))
@@ -67,11 +67,9 @@ def main():
                 action = pi.argmax().detach().cpu().numpy()
             elif args.algo == 'ddpg':
                 action = mlp(torch.Tensor(obs).to(device)).detach().cpu().numpy()
-            elif args.algo == 'sac' or args.algo == 'sac_alpha':
+            elif args.algo == 'sac' or args.algo == 'asac':
                 action, _, _ = mlp(torch.Tensor(obs).to(device))
                 action = action.detach().cpu().numpy()
-            # elif args.algo == 'tac':
-            #     action = mlp(torch.Tensor(obs).to(device)).detach().cpu().numpy()
             
             next_obs, reward, done, _ = env.step(action)
             

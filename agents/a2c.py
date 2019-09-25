@@ -19,11 +19,13 @@ class Agent(object):
                 steps=0,
                 gamma=0.99,
                 ent_coef=1e-3,
+                actor_lr=1e-4,
+                critic_lr=1e-3,
                 eval_mode=False,
                 actor_losses=list(),
                 critic_losses=list(),
                 entropies=list(),
-                average_losses=dict(),
+                losses=dict(),
    ):
 
       self.env = env
@@ -34,11 +36,13 @@ class Agent(object):
       self.steps = steps 
       self.gamma = gamma
       self.ent_coef = ent_coef
+      self.actor_lr = actor_lr
+      self.critic_lr = critic_lr
       self.eval_mode = eval_mode
       self.actor_losses = actor_losses
       self.critic_losses = critic_losses
       self.entropies = entropies
-      self.average_losses = average_losses
+      self.losses = losses
 
       # Actor network
       self.actor = CategoricalPolicy(self.obs_dim, self.act_dim, activation=torch.tanh).to(device)
@@ -46,8 +50,8 @@ class Agent(object):
       self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(device)
       
       # Create optimizers
-      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=1e-4)
-      self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=1e-3)
+      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
+      self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
       
    def select_action(self, obs):
       """Select an action from the set of available actions."""
@@ -122,7 +126,7 @@ class Agent(object):
          obs = next_obs
       
       # Save total average losses
-      self.average_losses['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 10)
-      self.average_losses['LossV'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 10)
-      self.average_losses['Entropy'] = round(torch.Tensor(self.entropies).to(device).mean().item(), 10)
+      self.losses['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
+      self.losses['LossV'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 5)
+      self.losses['Entropy'] = round(torch.Tensor(self.entropies).to(device).mean().item(), 5)
       return step_number, total_reward

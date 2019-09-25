@@ -21,16 +21,19 @@ class Agent(object):
                 act_limit,
                 steps=0,
                 gamma=0.99,
-                act_noise=0.015,
+                act_noise=0.2,
+                hidden_sizes=(128,128),
                 buffer_size=int(1e4),
                 batch_size=64,
+                actor_lr=1e-4,
+                critic_lr=3e-3,
                 gradient_clip_ac=0.5,
                 gradient_clip_cr=1.0,
                 eval_mode=False,
                 actor_losses=list(),
                 critic_losses=list(),
-                average_losses=dict(),
-   ):
+                losses=dict(),
+   ): # 1e-3
 
       self.env = env
       self.args = args
@@ -40,29 +43,32 @@ class Agent(object):
       self.steps = steps 
       self.gamma = gamma
       self.act_noise = act_noise
+      self.hidden_sizes = hidden_sizes
       self.buffer_size = buffer_size
       self.batch_size = batch_size
+      self.actor_lr = actor_lr
+      self.critic_lr = critic_lr
       self.gradient_clip_ac = gradient_clip_ac
       self.gradient_clip_cr = gradient_clip_cr
       self.eval_mode = eval_mode
       self.actor_losses = actor_losses
       self.critic_losses = critic_losses
-      self.average_losses = average_losses
+      self.losses = losses
 
       # Main network
-      self.actor = MLP(self.obs_dim, self.act_dim, hidden_sizes=(256,256), output_activation=torch.tanh).to(device)
-      self.critic = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
+      self.actor = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
+      self.critic = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       # Target network
-      self.actor_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=(256,256), output_activation=torch.tanh).to(device)
-      self.critic_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=(256,256)).to(device)
+      self.actor_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
+      self.critic_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       
       # Initialize target parameters to match main parameters
       hard_target_update(self.actor, self.actor_target)
       hard_target_update(self.critic, self.critic_target)
 
       # Create optimizers
-      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=3e-4)
-      self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=3e-4)
+      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
+      self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
       
       # Experience buffer
       self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size)
@@ -158,6 +164,6 @@ class Agent(object):
          obs = next_obs
       
       # Save total average losses
-      self.average_losses['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 10)
-      self.average_losses['LossQ'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 10)
+      self.losses['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
+      self.losses['LossQ'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 5)
       return step_number, total_reward

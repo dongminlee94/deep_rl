@@ -22,12 +22,12 @@ class Agent(object):
                 gamma=0.99,
                 epsilon=1.0,
                 epsilon_decay=0.995,
-                target_update_step=100,
                 buffer_size=int(1e4),
                 batch_size=64,
+                target_update_step=100,
                 eval_mode=False,
                 q_losses=list(),
-                average_losses=dict(),
+                losses=dict(),
    ):
 
       self.env = env
@@ -39,12 +39,12 @@ class Agent(object):
       self.gamma = gamma
       self.epsilon = epsilon
       self.epsilon_decay = epsilon_decay
-      self.target_update_step = target_update_step
       self.buffer_size = buffer_size
       self.batch_size = batch_size
+      self.target_update_step = target_update_step
       self.eval_mode = eval_mode
       self.q_losses = q_losses
-      self.average_losses = average_losses
+      self.losses = losses
 
       # Main network
       self.qf = MLP(self.obs_dim, self.act_dim).to(device)
@@ -152,6 +152,6 @@ class Agent(object):
          step_number += 1
          obs = next_obs
       
-      # Save total average loss
-      self.average_losses['LossQ'] = round(torch.Tensor(self.q_losses).to(device).mean().item(), 10)
+      # Save total loss
+      self.losses['LossQ'] = round(torch.Tensor(self.q_losses).to(device).mean().item(), 5)
       return step_number, total_reward

@@ -8,20 +8,20 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
-parser.add_argument('--env', type=str, default='LunarLanderContinuous-v2', 
-                    help='choose an environment between CartPole-v1 and LunarLanderContinuous-v2')
-parser.add_argument('--algo', type=str, default='sac', 
+parser.add_argument('--env', type=str, default='CartPole-v1', 
+                    help='choose an environment between CartPole-v1 and Pendulum-v0')
+parser.add_argument('--algo', type=str, default='a2c', 
                     help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, asac, tac')
-parser.add_argument('--training_eps', type=int, default=900, 
-                    help='training episode number (CartPole: 500, LunarLanderContinuous: 900)')
-parser.add_argument('--eval_per_train', type=int, default=150, 
-                    help='evaluation number per training (CartPole: 50, LunarLanderContinuous: 150)')
+parser.add_argument('--training_eps', type=int, default=500, 
+                    help='training episode number')
+parser.add_argument('--eval_per_train', type=int, default=50, 
+                    help='evaluation number per training')
 parser.add_argument('--evaluation_eps', type=int, default=100,
-                    help='evaluation episode number (CartPole: 100, LunarLanderContinuous: 100)')
-parser.add_argument('--max_step', type=int, default=300,
-                    help='max episode step (CartPole: 500, LunarLanderContinuous: 300)')
-parser.add_argument('--threshold_return', type=int, default=190,
-                    help='solved requirement for success in given environment (CartPole: 490, LunarLanderContinuous: 190)')
+                    help='evaluation episode number')
+parser.add_argument('--max_step', type=int, default=500,
+                    help='max episode step (CartPole: 500, Pendulum: 200)')
+parser.add_argument('--threshold_return', type=int, default=490,
+                    help='solved requirement for success in given environment (CartPole: 490, Pendulum: -230)')
 args = parser.parse_args()
 
 if args.algo == 'dqn':
@@ -36,8 +36,6 @@ elif args.algo == 'sac':
     from agents.sac import Agent
 elif args.algo == 'asac': # Automating entropy adjustment on SAC
     from agents.sac import Agent
-# elif args.algo == 'tac':
-#     from agents.tac import Agent
 
 def main():
     """Main."""
@@ -47,7 +45,7 @@ def main():
     if args.env == 'CartPole-v1':
         act_dim = env.action_space.n
         act_limit = None
-    elif args.env == 'LunarLanderContinuous-v2':
+    elif args.env == 'Pendulum-v0':
         act_dim = env.action_space.shape[0]
         act_limit = env.action_space.high[0]
     print('State dimension:', obs_dim)
@@ -59,10 +57,17 @@ def main():
     torch.manual_seed(0)
 
     # Create an agent
-    agent = Agent(env, args, obs_dim, act_dim, act_limit)
+    if args.algo == 'dqn' or args.algo == 'ddqn' or args.algo == 'a2c':
+        agent = Agent(env, args, obs_dim, act_dim, act_limit)
+    elif args.algo == 'ddpg':
+        agent = Agent(env, args, obs_dim, act_dim, act_limit, act_noise=0.2)
+    elif args.algo == 'sac':
+        agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.05)
+    elif args.algo == 'asac':
+        agent = Agent(env, args, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True)
 
     # Create a SummaryWriter object by TensorBoard
-    dir_name = 'runs/' + args.env + '_' + args.algo + '_' + time.ctime() + '_alpha_' + str(0.02)
+    dir_name = 'runs/' + args.algo + '/' + args.env + '_' + time.ctime()
     writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
@@ -88,6 +93,8 @@ def main():
         # Log experiment result for training episodes
         writer.add_scalar('Train/AverageReturns', train_average_return, episode)
         writer.add_scalar('Train/EpisodeReturns', train_episode_return, episode)
+        if args.algo == 'asac':
+            writer.add_scalar('Train/Alpha', agent.alpha, episode)
 
         # Perform the evaluation phase -- no learning
         if episode > 0 and episode % args.eval_per_train == 0:
@@ -115,7 +122,7 @@ def main():
             print('AverageReturn:', round(train_average_return, 2))
             print('EvalEpisodes:', eval_num_episodes)
             print('EvalAverageReturn:', round(eval_average_return, 2))
-            print('Loss:', agent.average_losses)
+            print('Loss:', agent.losses)
             print('Time:', int(time.time() - start_time))
             print('---------------------------------------')
 
