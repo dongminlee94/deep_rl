@@ -29,8 +29,6 @@ def main():
         act_dim = env.action_space.n
     elif args.env == 'Pendulum-v0':
         act_dim = env.action_space.shape[0]
-    print('State dimension:', obs_dim)
-    print('Action dimension:', act_dim)
 
     if args.algo == 'dqn' or args.algo == 'ddqn':
         mlp = MLP(obs_dim, act_dim).to(device)
@@ -50,7 +48,6 @@ def main():
     test_num_episodes = 0
 
     for episode in range(1, args.test_eps+1):
-        step_number = 0
         total_reward = 0.
 
         obs = env.reset()
@@ -74,7 +71,6 @@ def main():
             next_obs, reward, done, _ = env.step(action)
             
             total_reward += reward
-            step_number += 1
             obs = next_obs
         
         test_sum_returns += total_reward

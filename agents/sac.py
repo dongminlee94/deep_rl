@@ -101,13 +101,13 @@ class Agent(object):
          print("rews", rews.shape)
          print("done", done.shape)
 
-      # Prediction logπ(s), Q1(s,a), Q2(s,a), V(s), V‾(s')
+      # Prediction π(s), logπ(s), π(s'), logπ(s'), Q1(s,a), Q2(s,a)
       _, pi, log_pi = self.actor(obs1)
       _, next_pi, next_log_pi = self.actor(obs2)
       q1 = self.qf1(obs1, acts).squeeze(1)
       q2 = self.qf2(obs1, acts).squeeze(1)
 
-      # Min Double-Q:
+      # Min Double-Q: min(Q1‾(s',π(s')), Q2‾(s',π(s')))
       min_q_pi = torch.min(self.qf1_target(obs2, next_pi), self.qf2_target(obs2, next_pi)).squeeze(1).to(device)
 
       # Targets for Q and V regression
@@ -170,7 +170,7 @@ class Agent(object):
       obs = self.env.reset()
       done = False
 
-      # Keep interacting until we reach a terminal state.
+      # Keep interacting until agent reaches a terminal state.
       while not (done or step_number==max_step):
          self.steps += 1
          

@@ -54,7 +54,7 @@ class Agent(object):
       # Initialize target parameters to match main parameters
       hard_target_update(self.qf, self.qf_target)
 
-      # Create optimizer
+      # Create an optimizer
       self.qf_optimizer = optim.Adam(self.qf.parameters(), lr=1e-3)
 
       # Experience buffer
@@ -67,7 +67,7 @@ class Agent(object):
       self.epsilon = max(self.epsilon, 0.01)
 
       if np.random.rand() <= self.epsilon:
-            # Choose a random action with probability epsilon
+         # Choose a random action with probability epsilon
          return np.random.randint(self.act_dim)
       else:
          # Choose the action with highest Q-value at the current state
@@ -117,7 +117,7 @@ class Agent(object):
       # Save loss
       self.q_losses.append(qf_loss)
 
-      # Target parameters 𝜃‾ are synchronized as 𝜃 every N steps
+      # Synchronize target parameters 𝜃‾ as 𝜃 every N steps
       if self.steps % self.target_update_step == 0:
          hard_target_update(self.qf, self.qf_target)
 
@@ -128,7 +128,7 @@ class Agent(object):
       obs = self.env.reset()
       done = False
 
-      # Keep interacting until we reach a terminal state.
+      # Keep interacting until agent reaches a terminal state.
       while not (done or step_number==max_step):
          self.steps += 1
          

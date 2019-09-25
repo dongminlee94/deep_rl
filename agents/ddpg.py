@@ -139,7 +139,7 @@ class Agent(object):
       obs = self.env.reset()
       done = False
 
-      # Keep interacting until we reach a terminal state.
+      # Keep interacting until agent reaches a terminal state.
       while not (done or step_number==max_step):
          self.steps += 1
          

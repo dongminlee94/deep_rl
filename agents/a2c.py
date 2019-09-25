@@ -56,6 +56,7 @@ class Agent(object):
    def select_action(self, obs):
       """Select an action from the set of available actions."""
       action, log_pi, entropy, _  = self.actor(obs)
+      # Prediction V(s)
       v = self.critic(obs)
       self.transition.extend([log_pi, entropy, v])
       return action.detach().cpu().numpy()
@@ -101,7 +102,7 @@ class Agent(object):
       obs = self.env.reset()
       done = False
 
-      # Keep interacting until we reach a terminal state.
+      # Keep interacting until agent reaches a terminal state.
       while not (done or step_number==max_step):
          self.steps += 1
          

@@ -133,8 +133,8 @@ def main():
                 
                 save_name = args.env + '_' + args.algo
                 ckpt_path = os.path.join('./save_model/' + save_name + '_rt_' + str(round(train_average_return, 2)) \
-                                                                    + '_ep_' + str(train_num_episodes) \
-                                                                    + '_t_' + str(int(time.time() - start_time)) + '.pt')
+                                                                     + '_ep_' + str(train_num_episodes) \
+                                                                     + '_t_' + str(int(time.time() - start_time)) + '.pt')
                 
                 if args.algo == 'dqn' or args.algo == 'ddqn':
                     torch.save(agent.qf.state_dict(), ckpt_path)
