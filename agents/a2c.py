@@ -3,7 +3,7 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 
-from agents.common.mlp import *
+from agents.common.networks import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

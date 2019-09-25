@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from agents.common.mlp import *
+from agents.common.networks import *
 from agents.common.utils import *
 from agents.common.buffer import ReplayBuffer
 
