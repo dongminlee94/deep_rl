@@ -8,19 +8,19 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
-parser.add_argument('--env', type=str, default='CartPole-v1', 
+parser.add_argument('--env', type=str, default='Pendulum-v0', 
                     help='choose an environment between CartPole-v1 and Pendulum-v0')
-parser.add_argument('--algo', type=str, default='a2c', 
+parser.add_argument('--algo', type=str, default='tac', 
                     help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, asac, tac')
-parser.add_argument('--training_eps', type=int, default=500, 
+parser.add_argument('--training_eps', type=int, default=350, 
                     help='training episode number')
 parser.add_argument('--eval_per_train', type=int, default=50, 
                     help='evaluation number per training')
 parser.add_argument('--evaluation_eps', type=int, default=100,
                     help='evaluation episode number')
-parser.add_argument('--max_step', type=int, default=500,
+parser.add_argument('--max_step', type=int, default=200,
                     help='max episode step (CartPole: 500, Pendulum: 200)')
-parser.add_argument('--threshold_return', type=int, default=490,
+parser.add_argument('--threshold_return', type=int, default=-230,
                     help='solved requirement for success in given environment (CartPole: 490, Pendulum: -230)')
 args = parser.parse_args()
 
@@ -35,6 +35,8 @@ elif args.algo == 'ddpg':
 elif args.algo == 'sac':
     from agents.sac import Agent
 elif args.algo == 'asac': # Automating entropy adjustment on SAC
+    from agents.sac import Agent
+elif args.algo == 'tac': 
     from agents.sac import Agent
 
 def main():
@@ -65,6 +67,8 @@ def main():
         agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.05)
     elif args.algo == 'asac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True)
+    elif args.algo == 'tac':
+        agent = Agent(env, args, obs_dim, act_dim, act_limit, log_type='log-q', entropic_index=1.5)
 
     # Create a SummaryWriter object by TensorBoard
     dir_name = 'runs/' + args.algo + '/' + args.env + '_' + time.ctime()

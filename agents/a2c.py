@@ -75,8 +75,10 @@ class Agent(object):
       advant = q - v
 
       if 0: # Check shape of prediction and target
-         print("q", q.shape)
+         print("log_pi", log_pi.shape)
+         print("entropy", entropy.shape)
          print("v", v.shape)
+         print("q", q.shape)
 
       # Update critic network parameter
       critic_loss = F.mse_loss(v, q.detach())

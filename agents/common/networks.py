@@ -66,13 +66,13 @@ class CategoricalPolicy(MLP):
 
         dist = Categorical(pi)
         action = dist.sample()
-        log_pi = dist.log_prob(action)
+        log_pi = dist.log_prob(action).sum(dim=-1)
         entropy = dist.entropy()
         return action, log_pi, entropy, pi
 
 
 """
-SAC actor
+SAC actor, TAC actor
 """
 LOG_STD_MAX = 2
 LOG_STD_MIN = -20
@@ -82,6 +82,8 @@ class GaussianPolicy(MLP):
                  input_size, 
                  output_size, 
                  hidden_sizes=(64,64),
+                 log_type='log',
+                 q=1.5,
     ):
         super(GaussianPolicy, self).__init__(
             input_size=input_size,
@@ -95,6 +97,8 @@ class GaussianPolicy(MLP):
         # Set output layers
         self.mu_layer = nn.Linear(in_size, output_size)
         self.log_std_layer = nn.Linear(in_size, output_size)
+        self.log_type = log_type
+        self.q = 2.0 - q
 
     def clip_but_pass_gradient(self, x, l=-1., u=1.):
         clip_up = (x > u).float()
@@ -106,9 +110,13 @@ class GaussianPolicy(MLP):
         mu = torch.tanh(mu)
         pi = torch.tanh(pi)
         # To avoid evil machine precision error, strictly clip 1-pi**2 to [0,1] range.
-        log_pi -= torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6)
-        log_pi = log_pi.sum(dim=-1)
+        log_pi -= torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6), dim=-1)
         return mu, pi, log_pi
+
+    def log_q(self, x, q):
+        safe_x = torch.max(x, torch.Tensor([1e-6]))
+        log_q_x = torch.log(safe_x) if q==1. else (safe_x.pow(1-q)-1)/(1-q)
+        return log_q_x
         
     def forward(self, x):
         x = super(GaussianPolicy, self).forward(x)
@@ -120,7 +128,17 @@ class GaussianPolicy(MLP):
 
         dist = Normal(mu, std)
         pi = dist.rsample()
-        log_pi = dist.log_prob(pi)
-
+        log_pi = dist.log_prob(pi).sum(dim=-1)
+        
         mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
-        return mu, pi, log_pi
+        
+        if self.log_type == 'log':
+            return mu, pi, log_pi
+        elif self.log_type == 'log-q':
+            if self.q == 1.:
+                log_q_pi = log_pi
+            else:
+                exp_log_pi = torch.exp(log_pi)
+                log_q_pi = self.log_q(exp_log_pi, self.q)
+            return mu, pi, log_q_pi
+        

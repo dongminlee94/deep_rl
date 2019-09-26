@@ -22,6 +22,8 @@ class Agent(object):
                 steps=0,
                 gamma=0.99,
                 alpha=0.05,
+                log_type='log',
+                entropic_index=1.5,
                 automatic_entropy_tuning=False,
                 hidden_sizes=(128,128),
                 buffer_size=int(1e4),
@@ -33,7 +35,6 @@ class Agent(object):
                 actor_losses=list(),
                 qf1_losses=list(),
                 qf2_losses=list(),
-                vf_losses=list(),
                 alpha_losses=list(),
                 losses=dict(),
    ):
@@ -46,6 +47,8 @@ class Agent(object):
       self.steps = steps 
       self.gamma = gamma
       self.alpha = alpha
+      self.log_type = log_type
+      self.entropic_index = entropic_index
       self.automatic_entropy_tuning = automatic_entropy_tuning
       self.hidden_sizes = hidden_sizes
       self.buffer_size = buffer_size
@@ -61,7 +64,8 @@ class Agent(object):
       self.losses = losses
 
       # Main network
-      self.actor = GaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes).to(device)
+      self.actor = GaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
+                                          log_type=self.log_type, q=self.entropic_index).to(device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       # Target network
