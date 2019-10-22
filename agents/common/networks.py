@@ -156,7 +156,7 @@ class ReparamGaussianPolicy(MLP):
         std = torch.exp(log_std)
         
         dist = Normal(mu, std)
-        pi = dist.rsample()
+        pi = dist.rsample() # reparameterization trick (mean + std * N(0,1))
         log_pi = dist.log_prob(pi).sum(dim=-1)
         mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
     
