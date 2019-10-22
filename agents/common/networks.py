@@ -6,7 +6,7 @@ from agents.common.utils import identity
 
 
 """
-DQN, DDQN, A2C critic, DDPG actor
+DQN, DDQN, A2C critic, DDPG actor, TRPO critic, PPO critic
 """
 class MLP(nn.Module):
     def __init__(self, 
@@ -48,7 +48,7 @@ class MLP(nn.Module):
 
 
 """
-DDPG critic, SAC qf
+DDPG critic, SAC qf, TAC qf
 """
 class FlattenMLP(MLP):
     def forward(self, x, a):
@@ -72,23 +72,52 @@ class CategoricalPolicy(MLP):
 
 
 """
-SAC actor, TAC actor
+TRPO actor, PPO actor
 """
-LOG_STD_MAX = 2
-LOG_STD_MIN = -20
-
 class GaussianPolicy(MLP):
     def __init__(self, 
                  input_size, 
                  output_size, 
                  hidden_sizes=(64,64),
-                 log_type='log',
-                 q=1.5,
+                 activation=torch.tanh,
     ):
         super(GaussianPolicy, self).__init__(
             input_size=input_size,
             output_size=output_size,
             hidden_sizes=hidden_sizes,
+            activation=activation,
+        )
+
+    def forward(self, x):
+        mu = super(GaussianPolicy, self).forward(x)
+        log_std = torch.zeros_like(mu)
+        std = torch.exp(log_std)
+        
+        dist = Normal(mu, std)
+        pi = dist.sample()
+        return mu, std, dist, pi
+
+
+"""
+SAC actor, TAC actor
+"""
+LOG_STD_MAX = 2
+LOG_STD_MIN = -20
+
+class ReparamGaussianPolicy(MLP):
+    def __init__(self, 
+                 input_size, 
+                 output_size, 
+                 hidden_sizes=(64,64),
+                 activation=F.relu,
+                 log_type='log',
+                 q=1.5,
+    ):
+        super(ReparamGaussianPolicy, self).__init__(
+            input_size=input_size,
+            output_size=output_size,
+            hidden_sizes=hidden_sizes,
+            activation=activation,
             use_output_layer=False,
         )
 
@@ -119,19 +148,18 @@ class GaussianPolicy(MLP):
         return log_q_x
         
     def forward(self, x):
-        x = super(GaussianPolicy, self).forward(x)
+        x = super(ReparamGaussianPolicy, self).forward(x)
         
         mu = self.mu_layer(x)
         log_std = torch.tanh(self.log_std_layer(x))
         log_std = LOG_STD_MIN + 0.5 * (LOG_STD_MAX - LOG_STD_MIN) * (log_std + 1)
         std = torch.exp(log_std)
-
+        
         dist = Normal(mu, std)
         pi = dist.rsample()
         log_pi = dist.log_prob(pi).sum(dim=-1)
-        
         mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
-        
+    
         if self.log_type == 'log':
             return mu, pi, log_pi
         elif self.log_type == 'log-q':

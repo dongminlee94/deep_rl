@@ -4,9 +4,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from agents.common.networks import *
 from agents.common.utils import *
-from agents.common.buffer import ReplayBuffer
+from agents.common.buffer import *
+from agents.common.networks import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -32,8 +32,8 @@ class Agent(object):
                 eval_mode=False,
                 actor_losses=list(),
                 critic_losses=list(),
-                losses=dict(),
-   ): # 1e-3
+                logger=dict(),
+   ):
 
       self.env = env
       self.args = args
@@ -53,7 +53,7 @@ class Agent(object):
       self.eval_mode = eval_mode
       self.actor_losses = actor_losses
       self.critic_losses = critic_losses
-      self.losses = losses
+      self.logger = logger
 
       # Main network
       self.actor = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
@@ -110,21 +110,23 @@ class Agent(object):
          print("q", q.shape)
          print("q_backup", q_backup.shape)
 
-      # Update critic network parameter
+      # DDPG losses
+      actor_loss = -q_pi.mean()
       critic_loss = F.mse_loss(q, q_backup.detach())
+
+      # Update critic network parameter
       self.critic_optimizer.zero_grad()
       critic_loss.backward()
       nn.utils.clip_grad_norm_(self.critic.parameters(), self.gradient_clip_cr)
       self.critic_optimizer.step()
       
       # Update actor network parameter
-      actor_loss = -q_pi.mean()
       self.actor_optimizer.zero_grad()
       actor_loss.backward()
       nn.utils.clip_grad_norm_(self.actor.parameters(), self.gradient_clip_ac)
       self.actor_optimizer.step()
 
-      # Save loss
+      # Save losses
       self.actor_losses.append(actor_loss)
       self.critic_losses.append(critic_loss)
 
@@ -163,7 +165,7 @@ class Agent(object):
          step_number += 1
          obs = next_obs
       
-      # Save total average losses
-      self.losses['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
-      self.losses['LossQ'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 5)
+      # Save logs
+      self.logger['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
+      self.logger['LossQ'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 5)
       return step_number, total_reward

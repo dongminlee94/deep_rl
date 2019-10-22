@@ -9,8 +9,8 @@ from agents.common.networks import *
 parser = argparse.ArgumentParser()
 parser.add_argument('--env', type=str, default='Pendulum-v0', 
                     help='choose an environment between CartPole-v1 and Pendulum-v0')
-parser.add_argument('--algo', type=str, default='tac',
-                    help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, asac, tac')
+parser.add_argument('--algo', type=str, default='trpo',
+                    help='select an algorithm among dqn, ddqn, a2c, trpo, ppo, ddpg, sac, asac, tac')
 parser.add_argument('--load', type=str, default=None,
                     help='load the saved model')
 parser.add_argument('--render', action="store_true", default=True,
@@ -36,8 +36,10 @@ def main():
         mlp = CategoricalPolicy(obs_dim, act_dim, activation=torch.tanh).to(device)
     elif args.algo == 'ddpg':
         mlp = MLP(obs_dim, act_dim, hidden_sizes=(128,128), output_activation=torch.tanh).to(device)
-    elif args.algo == 'sac' or args.algo == 'asac' or args.algo == 'tac':
+    elif args.algo == 'trpo' or args.algo == 'ppo':
         mlp = GaussianPolicy(obs_dim, act_dim, hidden_sizes=(128,128)).to(device)
+    elif args.algo == 'sac' or args.algo == 'asac' or args.algo == 'tac':
+        mlp = ReparamGaussianPolicy(obs_dim, act_dim, hidden_sizes=(128,128)).to(device)
 
     if args.load is not None:
         pretrained_model_path = os.path.join('./save_model/' + str(args.load))
@@ -64,6 +66,9 @@ def main():
                 action = pi.argmax().detach().cpu().numpy()
             elif args.algo == 'ddpg':
                 action = mlp(torch.Tensor(obs).to(device)).detach().cpu().numpy()
+            elif args.algo == 'trpo' or args.algo == 'ppo':
+                action, _, _, _ = mlp(torch.Tensor(obs).to(device))
+                action = action.detach().cpu().numpy()
             elif args.algo == 'sac' or args.algo == 'asac' or args.algo == 'tac':
                 action, _, _ = mlp(torch.Tensor(obs).to(device))
                 action = action.detach().cpu().numpy()

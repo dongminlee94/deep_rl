@@ -4,14 +4,14 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from agents.common.networks import *
 from agents.common.utils import *
-from agents.common.buffer import ReplayBuffer
+from agents.common.buffer import *
+from agents.common.networks import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of the SAC agent."""
+   """An implementation of SAC, Automatic entropy adjustment SAC (ASAC), TAC agents."""
 
    def __init__(self,
                 env,
@@ -36,7 +36,7 @@ class Agent(object):
                 qf1_losses=list(),
                 qf2_losses=list(),
                 alpha_losses=list(),
-                losses=dict(),
+                logger=dict(),
    ):
 
       self.env = env
@@ -61,10 +61,10 @@ class Agent(object):
       self.qf1_losses = qf1_losses
       self.qf2_losses = qf2_losses
       self.alpha_losses = alpha_losses
-      self.losses = losses
+      self.logger = logger
 
       # Main network
-      self.actor = GaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
+      self.actor = ReparamGaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
                                           log_type=self.log_type, q=self.entropic_index).to(device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
@@ -106,7 +106,7 @@ class Agent(object):
          print("done", done.shape)
 
       # Prediction π(s), logπ(s), π(s'), logπ(s'), Q1(s,a), Q2(s,a)
-      _, pi, log_pi = self.actor(obs1)
+      _, _, log_pi = self.actor(obs1)
       _, next_pi, next_log_pi = self.actor(obs2)
       q1 = self.qf1(obs1, acts).squeeze(1)
       q2 = self.qf2(obs1, acts).squeeze(1)
@@ -128,9 +128,9 @@ class Agent(object):
          print("q_backup", q_backup.shape)
 
       # Soft actor-critic losses
+      actor_loss = (self.alpha*log_pi - min_q_pi).mean()
       qf1_loss = F.mse_loss(q1, q_backup.detach())
       qf2_loss = F.mse_loss(q2, q_backup.detach())
-      actor_loss = (self.alpha*log_pi - min_q_pi).mean()
 
       # Update two Q network parameter
       self.qf1_optimizer.zero_grad()
@@ -158,7 +158,7 @@ class Agent(object):
          # Save alpha loss
          self.alpha_losses.append(alpha_loss)
 
-      # Save loss & logpi
+      # Save losses
       self.actor_losses.append(actor_loss)
       self.qf1_losses.append(qf1_loss)
       self.qf2_losses.append(qf2_loss)
@@ -199,10 +199,10 @@ class Agent(object):
          step_number += 1
          obs = next_obs
       
-      # Save total loss
-      self.losses['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
-      self.losses['LossQ1'] = round(torch.Tensor(self.qf1_losses).to(device).mean().item(), 5)
-      self.losses['LossQ2'] = round(torch.Tensor(self.qf2_losses).to(device).mean().item(), 5)
+      # Save logs
+      self.logger['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
+      self.logger['LossQ1'] = round(torch.Tensor(self.qf1_losses).to(device).mean().item(), 5)
+      self.logger['LossQ2'] = round(torch.Tensor(self.qf2_losses).to(device).mean().item(), 5)
       if self.automatic_entropy_tuning:
-         self.losses['LossAlpha'] = round(torch.Tensor(self.alpha_losses).to(device).mean().item(), 5)
+         self.logger['LossAlpha'] = round(torch.Tensor(self.alpha_losses).to(device).mean().item(), 5)
       return step_number, total_reward

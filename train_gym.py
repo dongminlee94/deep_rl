@@ -10,9 +10,9 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
 parser.add_argument('--env', type=str, default='Pendulum-v0', 
                     help='choose an environment between CartPole-v1 and Pendulum-v0')
-parser.add_argument('--algo', type=str, default='tac', 
-                    help='select an algorithm among dqn, ddqn, a2c, ddpg, sac, asac, tac')
-parser.add_argument('--training_eps', type=int, default=350, 
+parser.add_argument('--algo', type=str, default='trpo', 
+                    help='select an algorithm among dqn, ddqn, a2c, trpo, ppo, ddpg, sac, asac, tac')
+parser.add_argument('--training_eps', type=int, default=1500, 
                     help='training episode number')
 parser.add_argument('--eval_per_train', type=int, default=50, 
                     help='evaluation number per training')
@@ -30,6 +30,10 @@ elif args.algo == 'ddqn': # Just replace the target of DQN with Double DQN
     from agents.dqn import Agent
 elif args.algo == 'a2c':
     from agents.a2c import Agent
+elif args.algo == 'trpo':
+    from agents.trpo import Agent
+elif args.algo == 'ppo':
+    from agents.ppo import Agent
 elif args.algo == 'ddpg':
     from agents.ddpg import Agent
 elif args.algo == 'sac':
@@ -59,9 +63,7 @@ def main():
     torch.manual_seed(0)
 
     # Create an agent
-    if args.algo == 'dqn' or args.algo == 'ddqn' or args.algo == 'a2c':
-        agent = Agent(env, args, obs_dim, act_dim, act_limit)
-    elif args.algo == 'ddpg':
+    if args.algo == 'ddpg':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, act_noise=0.2)
     elif args.algo == 'sac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.05)
@@ -69,6 +71,8 @@ def main():
         agent = Agent(env, args, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True)
     elif args.algo == 'tac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, log_type='log-q', entropic_index=1.5)
+    else:
+        agent = Agent(env, args, obs_dim, act_dim, act_limit)
 
     # Create a SummaryWriter object by TensorBoard
     dir_name = 'runs/' + args.algo + '/' + args.env + '_' + time.ctime()
@@ -126,7 +130,7 @@ def main():
             print('AverageReturn:', round(train_average_return, 2))
             print('EvalEpisodes:', eval_num_episodes)
             print('EvalAverageReturn:', round(eval_average_return, 2))
-            print('Loss:', agent.losses)
+            print('OtherLogs:', agent.logger)
             print('Time:', int(time.time() - start_time))
             print('---------------------------------------')
 
@@ -136,8 +140,8 @@ def main():
                     os.mkdir('./save_model')
                 
                 save_name = args.env + '_' + args.algo
-                ckpt_path = os.path.join('./save_model/' + save_name + '_rt_' + str(round(train_average_return, 2)) \
-                                                                     + '_ep_' + str(train_num_episodes) \
+                ckpt_path = os.path.join('./save_model/' + save_name + '_ep_' + str(train_num_episodes) \
+                                                                     + '_rt_' + str(round(eval_average_return, 2)) \
                                                                      + '_t_' + str(int(time.time() - start_time)) + '.pt')
                 
                 if args.algo == 'dqn' or args.algo == 'ddqn':

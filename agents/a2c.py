@@ -25,7 +25,7 @@ class Agent(object):
                 actor_losses=list(),
                 critic_losses=list(),
                 entropies=list(),
-                losses=dict(),
+                logger=dict(),
    ):
 
       self.env = env
@@ -42,7 +42,7 @@ class Agent(object):
       self.actor_losses = actor_losses
       self.critic_losses = critic_losses
       self.entropies = entropies
-      self.losses = losses
+      self.logger = logger
 
       # Actor network
       self.actor = CategoricalPolicy(self.obs_dim, self.act_dim, activation=torch.tanh).to(device)
@@ -80,19 +80,21 @@ class Agent(object):
          print("v", v.shape)
          print("q", q.shape)
 
-      # Update critic network parameter
+      # A2C losses
+      actor_loss = -log_pi*advant.detach() + self.ent_coef*entropy
       critic_loss = F.mse_loss(v, q.detach())
+
+      # Update critic network parameter
       self.critic_optimizer.zero_grad()
       critic_loss.backward()
       self.critic_optimizer.step()
       
       # Update actor network parameter
-      actor_loss = -log_pi * advant.detach() + self.ent_coef*entropy
       self.actor_optimizer.zero_grad()
       actor_loss.backward()
       self.actor_optimizer.step()
 
-      # Save loss & entropy
+      # Save losses & entropies
       self.actor_losses.append(actor_loss)
       self.critic_losses.append(critic_loss)
       self.entropies.append(entropy)
@@ -129,7 +131,7 @@ class Agent(object):
          obs = next_obs
       
       # Save total average losses
-      self.losses['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
-      self.losses['LossV'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 5)
-      self.losses['Entropy'] = round(torch.Tensor(self.entropies).to(device).mean().item(), 5)
+      self.logger['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
+      self.logger['LossV'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 5)
+      self.logger['Entropy'] = round(torch.Tensor(self.entropies).to(device).mean().item(), 5)
       return step_number, total_reward

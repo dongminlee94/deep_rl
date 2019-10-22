@@ -3,9 +3,9 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 
-from agents.common.networks import *
 from agents.common.utils import *
-from agents.common.buffer import ReplayBuffer
+from agents.common.buffer import *
+from agents.common.networks import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -27,7 +27,7 @@ class Agent(object):
                 target_update_step=100,
                 eval_mode=False,
                 q_losses=list(),
-                losses=dict(),
+                logger=dict(),
    ):
 
       self.env = env
@@ -44,7 +44,7 @@ class Agent(object):
       self.target_update_step = target_update_step
       self.eval_mode = eval_mode
       self.q_losses = q_losses
-      self.losses = losses
+      self.logger = logger
 
       # Main network
       self.qf = MLP(self.obs_dim, self.act_dim).to(device)
@@ -152,6 +152,6 @@ class Agent(object):
          step_number += 1
          obs = next_obs
       
-      # Save total loss
-      self.losses['LossQ'] = round(torch.Tensor(self.q_losses).to(device).mean().item(), 5)
+      # Save logs
+      self.logger['LossQ'] = round(torch.Tensor(self.q_losses).to(device).mean().item(), 5)
       return step_number, total_reward
