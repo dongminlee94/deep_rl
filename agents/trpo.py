@@ -11,7 +11,7 @@ from agents.common.networks import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of the TRPO agent."""
+   """An implementation of the TRPO agent (with support for NPG)."""
 
    def __init__(self,
                 env,
@@ -35,8 +35,8 @@ class Agent(object):
                 critic_losses=list(),
                 actor_delta_losses=list(),
                 critic_delta_losses=list(),
-                backtrack_iters=list(),
                 kls=list(),
+                backtrack_iters=list(),
                 logger=dict(),
    ):
 
@@ -61,8 +61,8 @@ class Agent(object):
       self.critic_losses = critic_losses
       self.actor_delta_losses = actor_delta_losses
       self.critic_delta_losses = critic_delta_losses
-      self.backtrack_iters = backtrack_iters
       self.kls = kls
+      self.backtrack_iters = backtrack_iters
       self.logger = logger
 
       # Main network
@@ -198,12 +198,8 @@ class Agent(object):
       old_params = self.flat_params(self.actor)
       self.update_model(self.old_actor, old_params)
 
-      expected_improve = (gradient * step_size * search_dir).sum(0, keepdim=True)
-
-      for i in range(self.backtrack_iter):
-         # Backtracking line search
-         # (https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf) 464p.
-         params = old_params + self.backtrack_coeff * step_size * search_dir
+      if self.args.algo == 'npg':
+         params = old_params + step_size * search_dir
          self.update_model(self.actor, params)
 
          _, _, dist, _ = self.actor(obs)
@@ -211,25 +207,40 @@ class Agent(object):
          ratio = torch.exp(log_pi - log_pi_old)
          actor_loss = (ratio*adv).mean()
 
-         loss_improve = actor_loss - actor_loss_old
-         expected_improve *= self.backtrack_coeff
-         improve_condition = loss_improve / expected_improve
-
          kl = self.gaussian_kl(new_actor=self.actor, old_actor=self.old_actor, obs=obs)
-         
-         if kl < self.delta and improve_condition > self.backtrack_alpha:
-            print('Accepting new params at step %d of line search.'%i)
-            self.backtrack_iters.append(i)
-            break
+      elif self.args.algo == 'trpo':
+         expected_improve = (gradient * step_size * search_dir).sum(0, keepdim=True)
 
-         if i == self.backtrack_iter-1:
-            print('Line search failed! Keeping old params.')
-            self.backtrack_iters.append(i)
-
-            params = self.flat_params(self.old_actor)
+         for i in range(self.backtrack_iter):
+            # Backtracking line search
+            # (https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf) 464p.
+            params = old_params + self.backtrack_coeff * step_size * search_dir
             self.update_model(self.actor, params)
 
-         self.backtrack_coeff *= 0.5
+            _, _, dist, _ = self.actor(obs)
+            log_pi = dist.log_prob(act).squeeze(1)
+            ratio = torch.exp(log_pi - log_pi_old)
+            actor_loss = (ratio*adv).mean()
+
+            loss_improve = actor_loss - actor_loss_old
+            expected_improve *= self.backtrack_coeff
+            improve_condition = loss_improve / expected_improve
+
+            kl = self.gaussian_kl(new_actor=self.actor, old_actor=self.old_actor, obs=obs)
+            
+            if kl < self.delta and improve_condition > self.backtrack_alpha:
+               print('Accepting new params at step %d of line search.'%i)
+               self.backtrack_iters.append(i)
+               break
+
+            if i == self.backtrack_iter-1:
+               print('Line search failed! Keeping old params.')
+               self.backtrack_iters.append(i)
+
+               params = self.flat_params(self.old_actor)
+               self.update_model(self.actor, params)
+
+            self.backtrack_coeff *= 0.5
 
       # Save losses
       self.actor_losses.append(actor_loss_old)
@@ -246,7 +257,7 @@ class Agent(object):
       done = False
 
       # Keep interacting until agent reaches a terminal state.
-      while not (done or step_number==max_step):
+      while not (done or step_number == max_step):
          if self.eval_mode:
             action, _, _, _ = self.actor(torch.Tensor(obs).to(device))
             action = action.detach().cpu().numpy()
@@ -263,7 +274,7 @@ class Agent(object):
             val = self.critic(torch.Tensor(obs).to(device))
             self.buffer.add(obs, action, reward, done, val)
             
-            # Start training when the number of experience is greater than batch size
+            # Start training when the number of experience is equal to sample size
             if self.steps == self.sample_size:
                self.buffer.finish_path()
                self.train_model()
@@ -279,6 +290,7 @@ class Agent(object):
       self.logger['LossV'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 5)
       self.logger['DeltaLossPi'] = round(torch.Tensor(self.actor_delta_losses).to(device).mean().item(), 5)
       self.logger['DeltaLossV'] = round(torch.Tensor(self.critic_delta_losses).to(device).mean().item(), 5)
-      self.logger['BacktrackIters'] = torch.Tensor(self.backtrack_iters).to(device).mean().item()
       self.logger['KL'] = round(torch.Tensor(self.kls).to(device).mean().item(), 5)
+      if self.args.algo == 'trpo':
+         self.logger['BacktrackIters'] = torch.Tensor(self.backtrack_iters).to(device).mean().item()
       return step_number, total_reward

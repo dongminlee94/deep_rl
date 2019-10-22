@@ -10,9 +10,9 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
 parser.add_argument('--env', type=str, default='Pendulum-v0', 
                     help='choose an environment between CartPole-v1 and Pendulum-v0')
-parser.add_argument('--algo', type=str, default='trpo', 
-                    help='select an algorithm among dqn, ddqn, a2c, trpo, ppo, ddpg, sac, asac, tac')
-parser.add_argument('--training_eps', type=int, default=1500, 
+parser.add_argument('--algo', type=str, default='vpg', 
+                    help='select an algorithm among dqn, ddqn, a2c, vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac')
+parser.add_argument('--training_eps', type=int, default=3000, 
                     help='training episode number')
 parser.add_argument('--eval_per_train', type=int, default=50, 
                     help='evaluation number per training')
@@ -30,12 +30,18 @@ elif args.algo == 'ddqn': # Just replace the target of DQN with Double DQN
     from agents.dqn import Agent
 elif args.algo == 'a2c':
     from agents.a2c import Agent
+elif args.algo == 'vpg':
+    from agents.vpg import Agent
+elif args.algo == 'npg':
+    from agents.trpo import Agent
 elif args.algo == 'trpo':
     from agents.trpo import Agent
 elif args.algo == 'ppo':
     from agents.ppo import Agent
 elif args.algo == 'ddpg':
     from agents.ddpg import Agent
+elif args.algo == 'td3':
+    from agents.td3 import Agent
 elif args.algo == 'sac':
     from agents.sac import Agent
 elif args.algo == 'asac': # Automating entropy adjustment on SAC
