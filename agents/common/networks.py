@@ -155,6 +155,7 @@ class ReparamGaussianPolicy(MLP):
         log_std = LOG_STD_MIN + 0.5 * (LOG_STD_MAX - LOG_STD_MIN) * (log_std + 1)
         std = torch.exp(log_std)
         
+        # https://pytorch.org/docs/stable/distributions.html#normal
         dist = Normal(mu, std)
         pi = dist.rsample() # reparameterization trick (mean + std * N(0,1))
         log_pi = dist.log_prob(pi).sum(dim=-1)

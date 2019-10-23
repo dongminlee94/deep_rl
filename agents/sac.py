@@ -23,7 +23,7 @@ class Agent(object):
                 gamma=0.99,
                 alpha=0.05,
                 log_type='log',
-                entropic_index=1.5,
+                entropic_index=0.7,
                 automatic_entropy_tuning=False,
                 hidden_sizes=(128,128),
                 buffer_size=int(1e4),
@@ -106,16 +106,17 @@ class Agent(object):
          print("done", done.shape)
 
       # Prediction π(s), logπ(s), π(s'), logπ(s'), Q1(s,a), Q2(s,a)
-      _, _, log_pi = self.actor(obs1)
+      _, pi, log_pi = self.actor(obs1)
       _, next_pi, next_log_pi = self.actor(obs2)
       q1 = self.qf1(obs1, acts).squeeze(1)
       q2 = self.qf2(obs1, acts).squeeze(1)
 
-      # Min Double-Q: min(Q1‾(s',π(s')), Q2‾(s',π(s')))
-      min_q_pi = torch.min(self.qf1_target(obs2, next_pi), self.qf2_target(obs2, next_pi)).squeeze(1).to(device)
+      # Min Double-Q: min(Q1(s,π(s)), Q2(s,π(s))), min(Q1‾(s',π(s')), Q2‾(s',π(s')))
+      min_q_pi = torch.min(self.qf1(obs1, pi), self.qf2(obs1, pi)).squeeze(1).to(device)
+      min_q_next_pi = torch.min(self.qf1_target(obs2, next_pi), self.qf2_target(obs2, next_pi)).squeeze(1).to(device)
 
       # Targets for Q and V regression
-      v_backup = min_q_pi - self.alpha*next_log_pi
+      v_backup = min_q_next_pi - self.alpha*next_log_pi
       q_backup = rews + self.gamma*(1-done)*v_backup
       q_backup.to(device)
 
@@ -125,6 +126,7 @@ class Agent(object):
          print("q1", q1.shape)
          print("q2", q2.shape)
          print("min_q_pi", min_q_pi.shape)
+         print("min_q_next_pi", min_q_next_pi.shape)
          print("q_backup", q_backup.shape)
 
       # Soft actor-critic losses
