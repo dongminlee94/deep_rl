@@ -11,7 +11,7 @@ from agents.common.networks import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of the VPG (with GAE-Lambda for advantage estimation) agent."""
+   """An implementation of the PPO (by clipping) agent."""
 
    def __init__(self,
                 env,
@@ -24,9 +24,11 @@ class Agent(object):
                 lam=0.97,
                 hidden_sizes=(128,128),
                 sample_size=2000,
+                mini_batch_size=64,
                 actor_lr=1e-3,
                 critic_lr=1e-3,
-                train_critic_iters=50,
+                clip_param=0.2,
+                epoch=10,
                 eval_mode=False,
                 actor_losses=list(),
                 critic_losses=list(),
@@ -45,9 +47,11 @@ class Agent(object):
       self.lam = lam
       self.hidden_sizes = hidden_sizes
       self.sample_size = sample_size
+      self.mini_batch_size = mini_batch_size
       self.actor_lr = actor_lr
       self.critic_lr = critic_lr
-      self.train_critic_iters = train_critic_iters
+      self.clip_param = clip_param
+      self.epoch = epoch
       self.eval_mode = eval_mode
       self.actor_losses = actor_losses
       self.critic_losses = critic_losses
@@ -73,35 +77,66 @@ class Agent(object):
       ret = batch['ret']
       adv = batch['adv']
 
-      if 0: # Check shape of experiences
+      # Prediction logπ_old(s), logπ(s), V(s)
+      _, _, dist_old, _ = self.actor(obs)
+      log_pi_old = dist_old.log_prob(act).squeeze(1)
+      log_pi_old = log_pi_old.detach()
+      v_old = self.critic(obs).squeeze(1)
+      v_old = v_old.detach()
+
+      if 0: # Check shape of experiences & predictions
          print("obs", obs.shape)
          print("act", act.shape)
          print("ret", ret.shape)
          print("adv", adv.shape)
-
-      # Prediction logπ(s), V(s)
-      _, _, dist_old, _ = self.actor(obs)
-      log_pi_old = dist_old.log_prob(act).squeeze(1)
-      v = self.critic(obs).squeeze(1)
-      
-      if 0: # Check shape of prediction
          print("log_pi_old", log_pi_old.shape)
-         print("v", v.shape)
+         print("v_old", v_old.shape)
 
-      # VPG losses
-      actor_loss = -(log_pi_old*adv).mean()
-      critic_loss = F.mse_loss(v, ret)
+      for _ in range(self.epoch):
+         for _ in range(self.sample_size // self.mini_batch_size):
+            random_idxs = np.random.choice(self.sample_size, self.mini_batch_size)
+            
+            mini_obs = obs[random_idxs,:]
+            mini_act = act[random_idxs,:]
+            mini_ret = ret[random_idxs]
+            mini_adv = adv[random_idxs]
+            mini_log_pi_old = log_pi_old[random_idxs]
+            mini_v_old = v_old[random_idxs]
 
-      # Update critic network parameter
-      for _ in range(self.train_critic_iters):
-         self.critic_optimizer.zero_grad()
-         critic_loss.backward(retain_graph=True)
-         self.critic_optimizer.step()
-      
-      # Update actor network parameter
-      self.actor_optimizer.zero_grad()
-      actor_loss.backward()
-      self.actor_optimizer.step()
+            if 0: # Check shape of experiences & predictions with mini-batch size
+               print("random_idxs", random_idxs.shape)
+               print("mini_obs", mini_obs.shape)
+               print("mini_act", mini_act.shape)
+               print("mini_ret", mini_ret.shape)
+               print("mini_adv", mini_adv.shape)
+               print("mini_log_pi_old", mini_log_pi_old.shape)
+               print("mini_v_old", mini_v_old.shape)
+
+            _, _, dist, _ = self.actor(mini_obs)
+            mini_log_pi = dist.log_prob(mini_act).squeeze(1)
+            mini_v = self.critic(mini_obs).squeeze(1)
+
+            # PPO losses
+            ratio = torch.exp(mini_log_pi - mini_log_pi_old)
+            clipped_ratio = (
+               torch.clamp(ratio, 1.-self.clip_param, 1.+self.clip_param)*mini_adv
+            )
+            actor_loss = -torch.min(ratio*mini_adv, clipped_ratio).mean()
+            clipped_value = mini_v_old + torch.clamp(
+               mini_v-mini_v_old, -self.clip_param, self.clip_param
+            )
+            critic_loss = torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clipped_value, mini_ret))
+            total_loss = actor_loss + 0.5 * critic_loss
+
+            # Update critic network parameter
+            self.critic_optimizer.zero_grad()
+            total_loss.backward(retain_graph=True)
+            self.critic_optimizer.step()
+
+            # Update actor network parameter
+            self.actor_optimizer.zero_grad()
+            total_loss.backward()
+            self.actor_optimizer.step()
 
       # Info (useful to watch during learning)
       _, _, dist, _ = self.actor(obs)
@@ -133,7 +168,7 @@ class Agent(object):
             _, _, _, action = self.actor(torch.Tensor(obs).to(device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
-
+            
             self.steps += 1
 
             # Add experience to buffer

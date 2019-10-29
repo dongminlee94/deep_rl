@@ -11,7 +11,7 @@ from agents.common.networks import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of the TRPO agent (with support for NPG)."""
+   """An implementation of the TRPO (with support for NPG) agent."""
 
    def __init__(self,
                 env,
@@ -25,8 +25,8 @@ class Agent(object):
                 delta=1e-2,
                 hidden_sizes=(128,128),
                 sample_size=2000,
-                train_critic_iters=50,
                 critic_lr=1e-3,
+                train_critic_iters=50,
                 backtrack_iter=10,
                 backtrack_coeff=1.0,
                 backtrack_alpha=0.5,
@@ -51,8 +51,8 @@ class Agent(object):
       self.delta = delta
       self.hidden_sizes = hidden_sizes
       self.sample_size = sample_size
-      self.train_critic_iters = train_critic_iters
       self.critic_lr = critic_lr
+      self.train_critic_iters = train_critic_iters
       self.backtrack_iter = backtrack_iter
       self.backtrack_coeff = backtrack_coeff
       self.backtrack_alpha = backtrack_alpha
@@ -243,11 +243,11 @@ class Agent(object):
             self.backtrack_coeff *= 0.5
 
       # Save losses
-      self.actor_losses.append(actor_loss_old)
-      self.critic_losses.append(critic_loss_old)
-      self.actor_delta_losses.append(actor_loss - actor_loss_old)
-      self.critic_delta_losses.append(critic_loss - critic_loss_old)
-      self.kls.append(kl)
+      self.actor_losses.append(actor_loss_old.item())
+      self.critic_losses.append(critic_loss_old.item())
+      self.actor_delta_losses.append((actor_loss - actor_loss_old).item())
+      self.critic_delta_losses.append((critic_loss - critic_loss_old).item())
+      self.kls.append(kl.item())
 
    def run(self, max_step):
       step_number = 0
@@ -279,18 +279,17 @@ class Agent(object):
                self.buffer.finish_path()
                self.train_model()
                self.steps = 0
-            
 
          total_reward += reward
          step_number += 1
          obs = next_obs
       
       # Save logs
-      self.logger['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
-      self.logger['LossV'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 5)
-      self.logger['DeltaLossPi'] = round(torch.Tensor(self.actor_delta_losses).to(device).mean().item(), 5)
-      self.logger['DeltaLossV'] = round(torch.Tensor(self.critic_delta_losses).to(device).mean().item(), 5)
-      self.logger['KL'] = round(torch.Tensor(self.kls).to(device).mean().item(), 5)
+      self.logger['LossPi'] = round(np.mean(self.actor_losses), 5)
+      self.logger['LossV'] = round(np.mean(self.critic_losses), 5)
+      self.logger['DeltaLossPi'] = round(np.mean(self.actor_delta_losses), 5)
+      self.logger['DeltaLossV'] = round(np.mean(self.critic_delta_losses), 5)
+      self.logger['KL'] = round(np.mean(self.kls), 5)
       if self.args.algo == 'trpo':
-         self.logger['BacktrackIters'] = torch.Tensor(self.backtrack_iters).to(device).mean().item()
+         self.logger['BacktrackIters'] = np.mean(self.backtrack_iters)
       return step_number, total_reward

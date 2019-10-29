@@ -10,7 +10,7 @@ from agents.common.networks import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of the DQN agent."""
+   """An implementation of the DQN (with Double DQN) agent."""
 
    def __init__(self,
                 env,
@@ -115,7 +115,7 @@ class Agent(object):
       self.qf_optimizer.step()
 
       # Save loss
-      self.q_losses.append(qf_loss)
+      self.q_losses.append(qf_loss.item())
 
       # Synchronize target parameters 𝜃‾ as 𝜃 every N steps
       if self.steps % self.target_update_step == 0:
@@ -153,5 +153,5 @@ class Agent(object):
          obs = next_obs
       
       # Save logs
-      self.logger['LossQ'] = round(torch.Tensor(self.q_losses).to(device).mean().item(), 5)
+      self.logger['LossQ'] = round(np.mean(self.q_losses), 5)
       return step_number, total_reward

@@ -21,7 +21,7 @@ class Agent(object):
                 act_limit,
                 steps=0,
                 gamma=0.99,
-                alpha=0.05,
+                alpha=0.2,
                 log_type='log',
                 entropic_index=0.7,
                 automatic_entropy_tuning=False,
@@ -29,7 +29,7 @@ class Agent(object):
                 buffer_size=int(1e4),
                 batch_size=64,
                 actor_lr=1e-4,
-                qf_lr=3e-3,
+                qf_lr=1e-3,
                 alpha_lr=1e-4,
                 eval_mode=False,
                 actor_losses=list(),
@@ -158,12 +158,12 @@ class Agent(object):
          self.alpha = self.log_alpha.exp()
 
          # Save alpha loss
-         self.alpha_losses.append(alpha_loss)
+         self.alpha_losses.append(alpha_loss.item())
 
       # Save losses
-      self.actor_losses.append(actor_loss)
-      self.qf1_losses.append(qf1_loss)
-      self.qf2_losses.append(qf2_loss)
+      self.actor_losses.append(actor_loss.item())
+      self.qf1_losses.append(qf1_loss.item())
+      self.qf2_losses.append(qf2_loss.item())
 
       # Polyak averaging for target parameter
       soft_target_update(self.qf1, self.qf1_target)
@@ -202,9 +202,9 @@ class Agent(object):
          obs = next_obs
       
       # Save logs
-      self.logger['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
-      self.logger['LossQ1'] = round(torch.Tensor(self.qf1_losses).to(device).mean().item(), 5)
-      self.logger['LossQ2'] = round(torch.Tensor(self.qf2_losses).to(device).mean().item(), 5)
+      self.logger['LossPi'] = round(np.mean(self.actor_losses), 5)
+      self.logger['LossQ1'] = round(np.mean(self.qf1_losses), 5)
+      self.logger['LossQ2'] = round(np.mean(self.qf2_losses), 5)
       if self.automatic_entropy_tuning:
-         self.logger['LossAlpha'] = round(torch.Tensor(self.alpha_losses).to(device).mean().item(), 5)
+         self.logger['LossAlpha'] = round(np.mean(self.alpha_losses), 5)
       return step_number, total_reward

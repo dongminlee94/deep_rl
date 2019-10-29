@@ -52,7 +52,7 @@ class Buffer(object):
         self.ptr, self.max_size = 0, size
 
     def add(self, obs, act, rew, don, val):
-        assert self.ptr < self.max_size      # buffer has to have room so you can store
+        assert self.ptr < self.max_size      # Buffer has to have room so you can store
         self.obs_buf[self.ptr] = obs
         self.act_buf[self.ptr] = act
         self.rew_buf[self.ptr] = rew
@@ -74,10 +74,11 @@ class Buffer(object):
             running_adv = running_del + self.gamma*self.lam*(1-self.don_buf[t])*running_adv
             previous_v = self.val_buf[t]
             self.adv_buf[t] = running_adv
+        # The next line implement the advantage normalization trick
         self.adv_buf = (self.adv_buf - self.adv_buf.mean()) / self.adv_buf.std()
         
     def get(self):
-        assert self.ptr == self.max_size
+        assert self.ptr == self.max_size     # Buffer has to be full before you can get
         self.ptr = 0
         return dict(obs=torch.Tensor(self.obs_buf).to(device),
                     act=torch.Tensor(self.act_buf).to(device),

@@ -10,9 +10,9 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
 parser.add_argument('--env', type=str, default='Pendulum-v0', 
                     help='choose an environment between CartPole-v1 and Pendulum-v0')
-parser.add_argument('--algo', type=str, default='tac', 
+parser.add_argument('--algo', type=str, default='td3', 
                     help='select an algorithm among dqn, ddqn, a2c, vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac')
-parser.add_argument('--training_eps', type=int, default=350, 
+parser.add_argument('--training_eps', type=int, default=1000, 
                     help='training episode number')
 parser.add_argument('--eval_per_train', type=int, default=50, 
                     help='evaluation number per training')
@@ -72,7 +72,7 @@ def main():
     if args.algo == 'ddpg':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, act_noise=0.2)
     elif args.algo == 'sac':
-        agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.05)
+        agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.2)
     elif args.algo == 'asac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True)
     elif args.algo == 'tac':

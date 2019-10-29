@@ -95,9 +95,9 @@ class Agent(object):
       self.actor_optimizer.step()
 
       # Save losses & entropies
-      self.actor_losses.append(actor_loss)
-      self.critic_losses.append(critic_loss)
-      self.entropies.append(entropy)
+      self.actor_losses.append(actor_loss.item())
+      self.critic_losses.append(critic_loss.item())
+      self.entropies.append(entropy.item())
 
    def run(self, max_step):
       step_number = 0
@@ -131,7 +131,7 @@ class Agent(object):
          obs = next_obs
       
       # Save total average losses
-      self.logger['LossPi'] = round(torch.Tensor(self.actor_losses).to(device).mean().item(), 5)
-      self.logger['LossV'] = round(torch.Tensor(self.critic_losses).to(device).mean().item(), 5)
-      self.logger['Entropy'] = round(torch.Tensor(self.entropies).to(device).mean().item(), 5)
+      self.logger['LossPi'] = round(np.mean(self.actor_losses), 5)
+      self.logger['LossV'] = round(np.mean(self.critic_losses), 5)
+      self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       return step_number, total_reward
