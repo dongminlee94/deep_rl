@@ -10,8 +10,8 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
 parser.add_argument('--env', type=str, default='Pendulum-v0', 
                     help='choose an environment between CartPole-v1 and Pendulum-v0')
-parser.add_argument('--algo', type=str, default='td3', 
-                    help='select an algorithm among dqn, ddqn, a2c, vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac')
+parser.add_argument('--algo', type=str, default='atac', 
+                    help='select an algorithm among dqn, ddqn, a2c, vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--training_eps', type=int, default=1000, 
                     help='training episode number')
 parser.add_argument('--eval_per_train', type=int, default=50, 
@@ -48,6 +48,8 @@ elif args.algo == 'asac': # Automating entropy adjustment on SAC
     from agents.sac import Agent
 elif args.algo == 'tac': 
     from agents.sac import Agent
+elif args.algo == 'atac': # Automating entropy adjustment on TAC
+    from agents.sac import Agent
 
 def main():
     """Main."""
@@ -77,6 +79,9 @@ def main():
         agent = Agent(env, args, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True)
     elif args.algo == 'tac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, log_type='log-q', entropic_index=0.7)
+    elif args.algo == 'atac':
+        agent = Agent(env, args, obs_dim, act_dim, act_limit, 
+                        log_type='log-q', entropic_index=0.7, automatic_entropy_tuning=True)
     else:
         agent = Agent(env, args, obs_dim, act_dim, act_limit)
 
@@ -107,7 +112,7 @@ def main():
         # Log experiment result for training episodes
         writer.add_scalar('Train/AverageReturns', train_average_return, episode)
         writer.add_scalar('Train/EpisodeReturns', train_episode_return, episode)
-        if args.algo == 'asac':
+        if args.algo == 'asac' or args.algo == 'atac':
             writer.add_scalar('Train/Alpha', agent.alpha, episode)
 
         # Perform the evaluation phase -- no learning

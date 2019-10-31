@@ -15,7 +15,7 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 9. Twin Delayed DDPG (TD3) <sub><sup> ([S. Fujimoto et al. 2018](https://arxiv.org/abs/1802.09477)) </sup></sub>
 10. Soft Actor-Critic (SAC) <sub><sup> ([T. Haarnoja et al. 2018](https://arxiv.org/abs/1801.01290)) </sup></sub>
 11. Automating entropy adjustment on SAC (ASAC) <sub><sup> ([T. Haarnoja et al. 2018](https://arxiv.org/abs/1812.05905)) </sup></sub>
-12. Tsallis Actor-Critic (TAC) <sub><sup> ([K. Lee et al. 2019](https://arxiv.org/abs/1902.00137)) </sup></sub>
+12. Tsallis Actor-Critic (TAC) <sub><sup> ([K. Lee et al. 2019](https://arxiv.org/abs/1902.00137)) </sup></sub> / Automating entropy adjustment on TAC (ATAC)
 
 ## Environments Implemented
 
