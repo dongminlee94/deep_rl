@@ -134,7 +134,7 @@ class Agent(object):
       self.actor_losses.append(actor_loss.item())
       self.critic_losses.append(critic_loss.item())
 
-   def run(self, max_step):
+   def run(self):
       step_number = 0
       total_reward = 0.
 
@@ -142,7 +142,7 @@ class Agent(object):
       done = False
 
       # Keep interacting until agent reaches a terminal state.
-      while not (done or step_number == max_step):
+      while not done:
          self.steps += 1
          
          if self.eval_mode:
