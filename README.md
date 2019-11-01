@@ -2,6 +2,8 @@
 
 This repository contains PyTorch implementations of deep reinforcement learning algorithms.
 
+This implementation uses PyTorch. For a TensorFlow implementation of algorithms, take a look at [tsallis_actor_critic_mujoco](https://github.com/rllab-snu/tsallis_actor_critic_mujoco).
+
 ## Algorithms Implemented
 
 1. Deep Q-Network (DQN) <sub><sup> ([V. Mnih et al. 2015](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf)) </sup></sub>
@@ -20,9 +22,9 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 ## Environments Implemented
 
-1. [CartPole-v1](https://gym.openai.com/envs/CartPole-v1/)
-2. [Pendulum-v0](https://gym.openai.com/envs/Pendulum-v0/)
-3. [MuJoCo environments (Hopper-v2, HalfCheetah-v2, Ant-v2, Humanoid-v2, etc.)](https://gym.openai.com/envs/#mujoco)
+1. CartPole-v1 <sub><sup> (as described in [here](https://gym.openai.com/envs/CartPole-v1/)) </sup></sub>
+2. Pendulum-v0 <sub><sup> (as described in [here](https://gym.openai.com/envs/Pendulum-v0/)) </sup></sub>
+3. MuJoCo environments (Hopper-v2, HalfCheetah-v2, Ant-v2, Humanoid-v2, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#mujoco)) </sup></sub>
 
 ## Results
 
@@ -31,7 +33,3 @@ TBD
 ## Usage
 
 TBD
-
-## Reference
-
-- [TensorFlow implementation of Tsallis Actor Critic method](https://github.com/rllab-snu/tsallis_actor_critic_mujoco)
