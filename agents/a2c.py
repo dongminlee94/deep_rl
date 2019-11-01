@@ -14,8 +14,7 @@ class Agent(object):
                 env,
                 args,
                 obs_dim,
-                act_dim,
-                act_limit,
+                act_num,
                 steps=0,
                 gamma=0.99,
                 ent_coef=1e-3,
@@ -31,8 +30,7 @@ class Agent(object):
       self.env = env
       self.args = args
       self.obs_dim = obs_dim
-      self.act_dim = act_dim
-      self.act_limit = act_limit
+      self.act_num = act_num
       self.steps = steps 
       self.gamma = gamma
       self.ent_coef = ent_coef
@@ -45,7 +43,7 @@ class Agent(object):
       self.logger = logger
 
       # Actor network
-      self.actor = CategoricalPolicy(self.obs_dim, self.act_dim, activation=torch.tanh).to(device)
+      self.actor = CategoricalPolicy(self.obs_dim, self.act_num, activation=torch.tanh).to(device)
       # Critic network
       self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(device)
       
@@ -99,7 +97,7 @@ class Agent(object):
       self.critic_losses.append(critic_loss.item())
       self.entropies.append(entropy.item())
 
-   def run(self, max_step):
+   def run(self):
       step_number = 0
       total_reward = 0.
 
@@ -107,7 +105,7 @@ class Agent(object):
       done = False
 
       # Keep interacting until agent reaches a terminal state.
-      while not (done or step_number == max_step):
+      while not done:
          self.steps += 1
          
          if self.eval_mode:

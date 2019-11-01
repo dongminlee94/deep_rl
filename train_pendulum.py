@@ -7,11 +7,11 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
-parser = argparse.ArgumentParser(description='RL algorithms with PyTorch')
-parser.add_argument('--env', type=str, default='Pendulum-v0', 
-                    help='choose an environment between CartPole-v1 and Pendulum-v0')
-parser.add_argument('--algo', type=str, default='atac', 
-                    help='select an algorithm among dqn, ddqn, a2c, vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
+parser = argparse.ArgumentParser(description='RL algorithms with PyTorch in Pendulum-v0 environment')
+parser.add_argument('--algo', type=str, default='ddpg', 
+                    help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
+parser.add_argument('--seed', type=int, default=0, 
+                    help='seed for random number generators')
 parser.add_argument('--training_eps', type=int, default=1000, 
                     help='training episode number')
 parser.add_argument('--eval_per_train', type=int, default=50, 
@@ -19,18 +19,12 @@ parser.add_argument('--eval_per_train', type=int, default=50,
 parser.add_argument('--evaluation_eps', type=int, default=100,
                     help='evaluation episode number')
 parser.add_argument('--max_step', type=int, default=200,
-                    help='max episode step (CartPole: 500, Pendulum: 200)')
+                    help='max episode step')
 parser.add_argument('--threshold_return', type=int, default=-230,
-                    help='solved requirement for success in given environment (CartPole: 490, Pendulum: -230)')
+                    help='solved requirement for success in given environment')
 args = parser.parse_args()
 
-if args.algo == 'dqn':
-    from agents.dqn import Agent
-elif args.algo == 'ddqn': # Just replace the target of DQN with Double DQN
-    from agents.dqn import Agent
-elif args.algo == 'a2c':
-    from agents.a2c import Agent
-elif args.algo == 'vpg':
+if args.algo == 'vpg':
     from agents.vpg import Agent
 elif args.algo == 'npg':
     from agents.trpo import Agent
@@ -54,24 +48,20 @@ elif args.algo == 'atac': # Automating entropy adjustment on TAC
 def main():
     """Main."""
     # Initialize environment
-    env = gym.make(args.env)
+    env = gym.make('Pendulum-v0')
     obs_dim = env.observation_space.shape[0]
-    if args.env == 'CartPole-v1':
-        act_dim = env.action_space.n
-        act_limit = None
-    elif args.env == 'Pendulum-v0':
-        act_dim = env.action_space.shape[0]
-        act_limit = env.action_space.high[0]
+    act_dim = env.action_space.shape[0]
+    act_limit = env.action_space.high[0]
     print('State dimension:', obs_dim)
     print('Action dimension:', act_dim)
 
     # Set a random seed
-    env.seed(0)
-    np.random.seed(0)
-    torch.manual_seed(0)
+    env.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
 
     # Create an agent
-    if args.algo == 'ddpg':
+    if args.algo == 'ddpg' or args.algo == 'td3':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, act_noise=0.2)
     elif args.algo == 'sac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.2)
@@ -86,7 +76,7 @@ def main():
         agent = Agent(env, args, obs_dim, act_dim, act_limit)
 
     # Create a SummaryWriter object by TensorBoard
-    dir_name = 'runs/' + args.algo + '/' + args.env + '_' + time.ctime()
+    dir_name = 'runs/' + args.algo + '/' + 'Pendulum-v0_' + time.ctime()
     writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
@@ -150,15 +140,12 @@ def main():
                 if not os.path.exists('./save_model'):
                     os.mkdir('./save_model')
                 
-                save_name = args.env + '_' + args.algo
+                save_name = 'Pendulum-v0_' + args.algo
                 ckpt_path = os.path.join('./save_model/' + save_name + '_ep_' + str(train_num_episodes) \
                                                                      + '_rt_' + str(round(eval_average_return, 2)) \
                                                                      + '_t_' + str(int(time.time() - start_time)) + '.pt')
                 
-                if args.algo == 'dqn' or args.algo == 'ddqn':
-                    torch.save(agent.qf.state_dict(), ckpt_path)
-                else:
-                    torch.save(agent.actor.state_dict(), ckpt_path)
+                torch.save(agent.actor.state_dict(), ckpt_path)
                 break
 
 if __name__ == "__main__":

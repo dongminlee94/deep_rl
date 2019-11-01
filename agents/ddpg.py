@@ -126,13 +126,13 @@ class Agent(object):
       nn.utils.clip_grad_norm_(self.actor.parameters(), self.gradient_clip_ac)
       self.actor_optimizer.step()
 
-      # Save losses
-      self.actor_losses.append(actor_loss.item())
-      self.critic_losses.append(critic_loss.item())
-
       # Polyak averaging for target parameter
       soft_target_update(self.actor, self.actor_target)
       soft_target_update(self.critic, self.critic_target)
+      
+      # Save losses
+      self.actor_losses.append(actor_loss.item())
+      self.critic_losses.append(critic_loss.item())
 
    def run(self, max_step):
       step_number = 0

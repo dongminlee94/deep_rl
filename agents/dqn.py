@@ -16,8 +16,7 @@ class Agent(object):
                 env,
                 args,
                 obs_dim,
-                act_dim,
-                act_limit,
+                act_num,
                 steps=0,
                 gamma=0.99,
                 epsilon=1.0,
@@ -33,8 +32,7 @@ class Agent(object):
       self.env = env
       self.args = args
       self.obs_dim = obs_dim
-      self.act_dim = act_dim
-      self.act_limit = act_limit
+      self.act_num = act_num
       self.steps = steps
       self.gamma = gamma
       self.epsilon = epsilon
@@ -47,9 +45,9 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.qf = MLP(self.obs_dim, self.act_dim).to(device)
+      self.qf = MLP(self.obs_dim, self.act_num).to(device)
       # Target network
-      self.qf_target = MLP(self.obs_dim, self.act_dim).to(device)
+      self.qf_target = MLP(self.obs_dim, self.act_num).to(device)
       
       # Initialize target parameters to match main parameters
       hard_target_update(self.qf, self.qf_target)
@@ -68,7 +66,7 @@ class Agent(object):
 
       if np.random.rand() <= self.epsilon:
          # Choose a random action with probability epsilon
-         return np.random.randint(self.act_dim)
+         return np.random.randint(self.act_num)
       else:
          # Choose the action with highest Q-value at the current state
          action = self.qf(obs).argmax()
@@ -114,14 +112,14 @@ class Agent(object):
       qf_loss.backward()
       self.qf_optimizer.step()
 
-      # Save loss
-      self.q_losses.append(qf_loss.item())
-
       # Synchronize target parameters 𝜃‾ as 𝜃 every N steps
       if self.steps % self.target_update_step == 0:
          hard_target_update(self.qf, self.qf_target)
+      
+      # Save loss
+      self.q_losses.append(qf_loss.item())
 
-   def run(self, max_step):
+   def run(self):
       step_number = 0
       total_reward = 0.
 
@@ -129,7 +127,7 @@ class Agent(object):
       done = False
 
       # Keep interacting until agent reaches a terminal state.
-      while not (done or step_number == max_step):
+      while not done:
          self.steps += 1
          
          if self.eval_mode:

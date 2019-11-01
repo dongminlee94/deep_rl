@@ -160,14 +160,14 @@ class Agent(object):
          # Save alpha loss
          self.alpha_losses.append(alpha_loss.item())
 
+      # Polyak averaging for target parameter
+      soft_target_update(self.qf1, self.qf1_target)
+      soft_target_update(self.qf2, self.qf2_target)
+      
       # Save losses
       self.actor_losses.append(actor_loss.item())
       self.qf1_losses.append(qf1_loss.item())
       self.qf2_losses.append(qf2_loss.item())
-
-      # Polyak averaging for target parameter
-      soft_target_update(self.qf1, self.qf1_target)
-      soft_target_update(self.qf2, self.qf2_target)
 
    def run(self, max_step):
       step_number = 0

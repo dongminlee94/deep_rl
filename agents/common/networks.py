@@ -6,7 +6,7 @@ from agents.common.utils import identity
 
 
 """
-DQN, DDQN, A2C critic, DDPG actor, TRPO critic, PPO critic
+DQN, DDQN, A2C critic, VPG critic, TRPO critic, PPO critic, DDPG actor, TD3 actor
 """
 class MLP(nn.Module):
     def __init__(self, 
@@ -48,7 +48,7 @@ class MLP(nn.Module):
 
 
 """
-DDPG critic, SAC qf, TAC qf
+DDPG critic, TD3 critic, SAC qf, TAC qf
 """
 class FlattenMLP(MLP):
     def forward(self, x, a):
@@ -72,7 +72,7 @@ class CategoricalPolicy(MLP):
 
 
 """
-TRPO actor, PPO actor
+VPG actor, TRPO actor, PPO actor
 """
 class GaussianPolicy(MLP):
     def __init__(self, 
@@ -142,7 +142,7 @@ class ReparamGaussianPolicy(MLP):
         log_pi -= torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6), dim=-1)
         return mu, pi, log_pi
 
-    def log_q(self, x, q):
+    def tsallis_entropy_log_q(self, x, q):
         safe_x = torch.max(x, torch.Tensor([1e-6]))
         log_q_x = torch.log(safe_x) if q==1. else (safe_x.pow(1-q)-1)/(1-q)
         return log_q_x
@@ -168,6 +168,6 @@ class ReparamGaussianPolicy(MLP):
                 log_q_pi = log_pi
             else:
                 exp_log_pi = torch.exp(log_pi)
-                log_q_pi = self.log_q(exp_log_pi, self.q)
+                log_q_pi = self.tsallis_entropy_log_q(exp_log_pi, self.q)
             return mu, pi, log_q_pi
         
