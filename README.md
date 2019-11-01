@@ -34,4 +34,4 @@ TBD
 
 ## Reference
 
-- [Implementation of Tsallis Actor Critic method](https://github.com/rllab-snu/tsallis_actor_critic_mujoco)
+- [TensorFlow implementation of Tsallis Actor Critic method](https://github.com/rllab-snu/tsallis_actor_critic_mujoco)
