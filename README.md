@@ -21,7 +21,7 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 1. [CartPole-v1](https://gym.openai.com/envs/CartPole-v1/)
 2. [Pendulum-v0](https://gym.openai.com/envs/Pendulum-v0/)
-3. [MuJoCo environments (Hopper-v2, HalfCheetah-v2, Ant-v2, Pusher-v2 and Humanoid-v2)](https://gym.openai.com/envs/#mujoco)
+3. [MuJoCo environments (Hopper-v2, HalfCheetah-v2, Ant-v2, Humanoid-v2, etc.)](https://gym.openai.com/envs/#mujoco)
 
 ## Results
 
