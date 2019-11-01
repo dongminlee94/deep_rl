@@ -19,8 +19,18 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 ## Environments Implemented
 
+1. [CartPole-v1](https://gym.openai.com/envs/CartPole-v1/)
+2. [Pendulum-v0](https://gym.openai.com/envs/Pendulum-v0/)
+3. [MuJoCo environments (Hopper-v2, HalfCheetah-v2, Ant-v2, Pusher-v2 and Humanoid-v2)](https://gym.openai.com/envs/#mujoco)
+
 ## Results
+
+TBD
 
 ## Usage
 
+TBD
+
 ## Reference
+
+- [Implementation of Tsallis Actor Critic method](https://github.com/rllab-snu/tsallis_actor_critic_mujoco)
