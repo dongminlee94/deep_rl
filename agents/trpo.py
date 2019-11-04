@@ -26,7 +26,7 @@ class Agent(object):
                 hidden_sizes=(128,128),
                 sample_size=2000,
                 critic_lr=1e-3,
-                train_critic_iters=50,
+                train_critic_iters=80,
                 backtrack_iter=10,
                 backtrack_coeff=1.0,
                 backtrack_alpha=0.5,
@@ -249,7 +249,7 @@ class Agent(object):
       self.critic_delta_losses.append((critic_loss - critic_loss_old).item())
       self.kls.append(kl.item())
 
-   def run(self):
+   def run(self, max_step):
       step_number = 0
       total_reward = 0.
 
@@ -257,7 +257,7 @@ class Agent(object):
       done = False
 
       # Keep interacting until agent reaches a terminal state.
-      while not done:
+      while not (done or step_number == max_step):
          if self.eval_mode:
             action, _, _, _ = self.actor(torch.Tensor(obs).to(device))
             action = action.detach().cpu().numpy()

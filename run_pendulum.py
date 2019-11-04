@@ -18,6 +18,8 @@ parser.add_argument('--eval_per_train', type=int, default=50,
                     help='evaluation number per training')
 parser.add_argument('--evaluation_eps', type=int, default=100,
                     help='evaluation episode number')
+parser.add_argument('--max_step', type=int, default=200,
+                    help='max episode step')
 parser.add_argument('--threshold_return', type=int, default=-215,
                     help='solved requirement for success in given environment')
 args = parser.parse_args()
@@ -89,7 +91,7 @@ def main():
         agent.eval_mode = False
         
         # Run one episode
-        train_step_length, train_episode_return = agent.run()
+        train_step_length, train_episode_return = agent.run(args.max_step)
         
         train_num_steps += train_step_length
         train_sum_returns += train_episode_return
@@ -112,7 +114,7 @@ def main():
 
             for _ in range(args.evaluation_eps):
                 # Run one episode
-                eval_step_length, eval_episode_return = agent.run()
+                eval_step_length, eval_episode_return = agent.run(args.max_step)
 
                 eval_sum_returns += eval_episode_return
                 eval_num_episodes += 1

@@ -169,7 +169,7 @@ class Agent(object):
       self.qf1_losses.append(qf1_loss.item())
       self.qf2_losses.append(qf2_loss.item())
 
-   def run(self):
+   def run(self, max_step):
       step_number = 0
       total_reward = 0.
 
@@ -177,7 +177,7 @@ class Agent(object):
       done = False
 
       # Keep interacting until agent reaches a terminal state.
-      while not done:
+      while not (done or step_number == max_step):
          self.steps += 1
          
          if self.eval_mode:

@@ -78,7 +78,7 @@ def main():
                     hidden_size=(400,300), buffer_size=int(1e6), batch_size=100)
     else:
         agent = Agent(env, args, obs_dim, act_dim, act_limit, 
-                    hidden_size=(400,300), buffer_size=int(1e6), batch_size=100)
+                    hidden_size=(400,300), sample_size=4000)
 
     # Create a SummaryWriter object by TensorBoard
     dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) + '_' + time.ctime()
@@ -98,7 +98,7 @@ def main():
             agent.eval_mode = False
             
             # Run one episode
-            train_step_length, train_episode_return = agent.run()
+            train_step_length, train_episode_return = agent.run(args.max_step)
             
             total_num_steps += train_step_length
             train_step_count += train_step_length
@@ -121,7 +121,7 @@ def main():
 
         for _ in range(10):
             # Run one episode
-            eval_step_length, eval_episode_return = agent.run()
+            eval_step_length, eval_episode_return = agent.run(args.max_step)
 
             eval_sum_returns += eval_episode_return
             eval_num_episodes += 1
