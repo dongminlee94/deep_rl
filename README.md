@@ -30,11 +30,11 @@ This implementation uses PyTorch. For a TensorFlow implementation of algorithms,
 
 ### CartPole
 
-<img src="results/graphs/cartpole.png" width="1000"/>
+<img src="results/graphs/cartpole.png" width="800"/>
 
 ### Pendulum
 
-<img src="results/graphs/pendulum.png" width="1000"/>
+<img src="results/graphs/pendulum.png" width="800"/>
 
 ### HalfCheetah
 
