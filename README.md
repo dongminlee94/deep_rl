@@ -38,19 +38,11 @@ This implementation uses PyTorch. For a TensorFlow implementation of algorithms,
 
 ### HalfCheetah
 
-TBD
-
 ### Ant
-
-TBD
 
 ### Pusher
 
-TBD
-
 ### Humanoid
-
-TBD
 
 ## Usage
 
