@@ -82,11 +82,6 @@ def main():
         agent = Agent(env, args, obs_dim, act_dim, act_limit, 
                     hidden_size=(400,300), sample_size=4000)
 
-    # if args.load is not None:
-    #     pretrained_model_path = os.path.join('./tests/save_model/' + str(args.load))
-    #     pretrained_model = torch.load(pretrained_model_path)
-    #     agent.actor.load_state_dict(pretrained_model)
-
     # Create a SummaryWriter object by TensorBoard
     dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) + '_' + time.ctime()
     writer = SummaryWriter(log_dir=dir_name)

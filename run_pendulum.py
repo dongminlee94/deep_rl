@@ -137,8 +137,8 @@ def main():
 
             # Save a training model
             if eval_average_return >= args.threshold_return:
-                if not os.path.exists('./tests/save_model'):
-                    os.mkdir('./tests/save_model')
+                if not os.path.exists('./tests/save_model' + 'Pendulum-v0/' + args.algo):
+                    os.mkdir('./tests/save_model' + 'Pendulum-v0/' + args.algo)
                 
                 ckpt_path = os.path.join('./tests/save_model/' + 'Pendulum-v0/' + args.algo + '/' \
                                                                                 + 'ep_' + str(train_num_episodes) \
