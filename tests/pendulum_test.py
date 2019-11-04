@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--algo', type=str, default='sac',
                     help='select an algorithm among vpg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--load', type=str, default=None,
-                    help='copy & paste the saved model name, and load it (ex. --load Pendulum-v0_...)')
+                    help='copy & paste the saved model name, and load it (ex. --load=Pendulum-v0/...)')
 parser.add_argument('--render', action="store_true", default=False,
                     help='if you want to render, set this to True')
 parser.add_argument('--test_eps', type=int, default=10000,

@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--algo', type=str, default='dqn',
                     help='select an algorithm among dqn, ddqn, a2c')
 parser.add_argument('--load', type=str, default=None,
-                    help='copy & paste the saved model name, and load it (ex. --load CartPole-v1_...)')
+                    help='copy & paste the saved model name, and load it (ex. --load=CartPole-v1/...)')
 parser.add_argument('--render', action="store_true", default=True,
                     help='if you want to render, set this to True')
 parser.add_argument('--test_eps', type=int, default=10000,

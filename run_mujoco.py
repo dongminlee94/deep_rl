@@ -12,6 +12,8 @@ parser.add_argument('--env', type=str, default='HalfCheetah-v2',
                     help='choose an environment between HalfCheetah-v2, Ant-v2, Pusher-v2 and Humanoid-v2')
 parser.add_argument('--algo', type=str, default='sac', 
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
+parser.add_argument('--load', type=str, default=None,
+                    help='copy & paste the saved model name, and load it (ex. --load=...)')
 parser.add_argument('--seed', type=int, default=0, 
                     help='seed for random number generators')
 parser.add_argument('--iterations', type=int, default=200, 
@@ -80,6 +82,11 @@ def main():
         agent = Agent(env, args, obs_dim, act_dim, act_limit, 
                     hidden_size=(400,300), sample_size=4000)
 
+    # if args.load is not None:
+    #     pretrained_model_path = os.path.join('./tests/save_model/' + str(args.load))
+    #     pretrained_model = torch.load(pretrained_model_path)
+    #     agent.actor.load_state_dict(pretrained_model)
+
     # Create a SummaryWriter object by TensorBoard
     dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) + '_' + time.ctime()
     writer = SummaryWriter(log_dir=dir_name)
@@ -147,7 +154,7 @@ def main():
             os.mkdir('./tests/save_model')
         
         ckpt_path = os.path.join('./tests/save_model/' + args.env + '/' + args.algo + '/' \
-                                                                        + '_i_' + str(i) \
+                                                                        + 'i_' + str(i) \
                                                                         + '_st_' + str(total_num_steps) \
                                                                         + '_ep_' + str(train_num_episodes) \
                                                                         + '_rt_' + str(round(train_average_return, 2)) \
