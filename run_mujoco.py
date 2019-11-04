@@ -16,7 +16,7 @@ parser.add_argument('--seed', type=int, default=0,
                     help='seed for random number generators')
 parser.add_argument('--iterations', type=int, default=200, 
                     help='iterations to run and train agent')
-parser.add_argument('--steps_per_iter', type=int, default=5000, 
+parser.add_argument('--steps_per_iter', type=int, default=4000, 
                     help='steps of interaction for the agent and the environment in each epoch')
 parser.add_argument('--max_step', type=int, default=1000,
                     help='max episode step')
@@ -108,8 +108,8 @@ def main():
             train_average_return = train_sum_returns / train_num_episodes if train_num_episodes > 0 else 0.0
 
             # Log experiment result for training episodes
-            writer.add_scalar('Train/AverageReturns', train_average_return, train_num_episodes)
-            writer.add_scalar('Train/EpisodeReturns', train_episode_return, train_num_episodes)
+            writer.add_scalar('Train/AverageReturns', train_average_return, total_num_steps)
+            writer.add_scalar('Train/EpisodeReturns', train_episode_return, total_num_steps)
             if args.algo == 'asac' or args.algo == 'atac':
                 writer.add_scalar('Train/Alpha', agent.alpha, train_num_episodes)
 
@@ -129,13 +129,13 @@ def main():
         eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
 
         # Log experiment result for evaluation episodes
-        writer.add_scalar('Eval/AverageReturns', eval_average_return, train_num_episodes)
-        writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, train_num_episodes)
+        writer.add_scalar('Eval/AverageReturns', eval_average_return, total_num_steps)
+        writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, total_num_steps)
 
         print('---------------------------------------')
         print('Iterations:', i)
-        print('Episodes:', train_num_episodes)
         print('Steps:', total_num_steps)
+        print('Episodes:', train_num_episodes)
         print('AverageReturn:', round(train_average_return, 2))
         print('EvalEpisodes:', eval_num_episodes)
         print('EvalAverageReturn:', round(eval_average_return, 2))

@@ -97,8 +97,8 @@ def main():
                 writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, episode)
 
             print('---------------------------------------')
-            print('Episodes:', train_num_episodes)
             print('Steps:', train_num_steps)
+            print('Episodes:', train_num_episodes)
             print('AverageReturn:', round(train_average_return, 2))
             print('EvalEpisodes:', eval_num_episodes)
             print('EvalAverageReturn:', round(eval_average_return, 2))
