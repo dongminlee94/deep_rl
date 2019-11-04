@@ -1,6 +1,6 @@
 # Deep Reinforcement Learning (DRL) Algorithms with PyTorch
 
-This repository contains PyTorch implementations of deep reinforcement learning algorithms. This implementation uses PyTorch. For a TensorFlow implementation of algorithms, take a look at [tac_mujoco](https://github.com/rllab-snu/tsallis_actor_critic_mujoco).
+This repository contains PyTorch implementations of deep reinforcement learning algorithms. This implementation uses PyTorch. For a TensorFlow implementation of algorithms, take a look at [tsallis_actor_critic_mujoco](https://github.com/rllab-snu/tsallis_actor_critic_mujoco).
 
 ## Algorithms Implemented
 
@@ -54,7 +54,7 @@ The repository's high-level structure is:
     ├── tests
         └── save_model
 
-### 1) How to train the agents on the environments
+### 1) To train the agents on the environments
 
 To train all the different agents on MuJoCo environments, follow these steps:
 
@@ -68,16 +68,16 @@ For other environments, change the last line to `run_cartpole.py`, `run_pendulum
 
 If you want to change configurations of the agents, follow this step:
 ```commandline
-python run_mujoco.py --env Humanoid-v2 --algo tac --seed 1
+python run_mujoco.py --env=Humanoid-v2 --algo=tac --seed=1
 ```
 
-### 2) How to watch the learned agents on the above environments
+### 2) To watch the learned agents on the above environments
 
 To watch all the learned agents on MuJoCo environments, follow these steps:
 
 ```commandline
 cd tests
-python mujoco_test.py --load env_name/algo_name/...
+python mujoco_test.py --load=env_name/algo_name/...
 ```
 
 You should copy the saved model name in `tests/save_model/env_name/algo_name/...` and paste the copied name in `...`. So the saved model will be load.
