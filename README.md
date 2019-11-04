@@ -46,4 +46,40 @@ This implementation uses PyTorch. For a TensorFlow implementation of algorithms,
 
 ## Usage
 
-TBD
+The repository's high-level structure is:
+
+    ├── agents                    
+        └── common 
+    ├── results  
+        ├── data 
+        └── graphs        
+    ├── tests
+        └── save_model
+
+#### 1) How to train the agents on the environments
+
+To train all the different agents on MuJoCo environments, follow these steps:
+
+```commandline
+git clone https://github.com/dongminlee94/deep_rl.git
+cd deep_rl
+python run_mujoco.py
+```
+
+For other environments, change the last line to `run_cartpole.py`, `run_pendulum.py`.
+
+If you want to change configurations of the agents, follow this step:
+```commandline
+python run_mujoco.py --env Humanoid-v2 --algo tac --seed 1
+```
+
+#### 2) How to watch the learned agents on the above environments
+
+To watch all the learned agents on MuJoCo environments, follow these steps:
+
+```commandline
+cd tests
+python mujoco_test.py --load env_name/algo_name/...
+```
+
+You should copy the saved model name in `tests/save_model/env_name/algo_name/...` and paste the copied name in `...`. So the saved model will be load.

@@ -111,10 +111,10 @@ def main():
                 if not os.path.exists('./tests/save_model'):
                     os.mkdir('./tests/save_model')
                 
-                save_name = 'CartPole-v1_' + args.algo
-                ckpt_path = os.path.join('./tests/save_model/' + save_name + '_ep_' + str(train_num_episodes) \
-                                                                           + '_rt_' + str(round(eval_average_return, 2)) \
-                                                                           + '_t_' + str(int(time.time() - start_time)) + '.pt')
+                ckpt_path = os.path.join('./tests/save_model/' + 'CartPole-v1/' + args.algo + '/' \
+                                                                                + '_ep_' + str(train_num_episodes) \
+                                                                                + '_rt_' + str(round(eval_average_return, 2)) \
+                                                                                + '_t_' + str(int(time.time() - start_time)) + '.pt')
                 
                 if args.algo == 'dqn' or args.algo == 'ddqn':
                     torch.save(agent.qf.state_dict(), ckpt_path)
