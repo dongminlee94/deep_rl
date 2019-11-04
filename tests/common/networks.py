@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical, Normal
-from agents.common.utils import identity
+from common.utils import identity
 
 
 """
@@ -110,7 +110,6 @@ class ReparamGaussianPolicy(MLP):
                  output_size, 
                  hidden_sizes=(64,64),
                  activation=F.relu,
-                 action_scale=1.0,
                  log_type='log',
                  q=1.5,
     ):
@@ -127,7 +126,6 @@ class ReparamGaussianPolicy(MLP):
         # Set output layers
         self.mu_layer = nn.Linear(in_size, output_size)
         self.log_std_layer = nn.Linear(in_size, output_size)
-        self.action_scale = action_scale
         self.log_type = log_type
         self.q = 2.0 - q
 
@@ -162,11 +160,8 @@ class ReparamGaussianPolicy(MLP):
         pi = dist.rsample() # reparameterization trick (mean + std * N(0,1))
         log_pi = dist.log_prob(pi).sum(dim=-1)
         mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
-
+    
         if self.log_type == 'log':
-            # make sure actions are in correct range
-            mu = mu * self.action_scale
-            pi = pi * self.action_scale
             return mu, pi, log_pi
         elif self.log_type == 'log-q':
             if self.q == 1.:
@@ -174,7 +169,5 @@ class ReparamGaussianPolicy(MLP):
             else:
                 exp_log_pi = torch.exp(log_pi)
                 log_q_pi = self.tsallis_entropy_log_q(exp_log_pi, self.q)
-            # make sure actions are in correct range
-            mu = mu * self.action_scale
-            pi = pi * self.action_scale
             return mu, pi, log_q_pi
+        

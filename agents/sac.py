@@ -21,16 +21,16 @@ class Agent(object):
                 act_limit,
                 steps=0,
                 gamma=0.99,
-                alpha=0.2,
+                alpha=0.7,
                 log_type='log',
-                entropic_index=0.7,
+                entropic_index=1.5,
                 automatic_entropy_tuning=False,
                 hidden_sizes=(128,128),
                 buffer_size=int(1e4),
                 batch_size=64,
-                actor_lr=1e-4,
+                actor_lr=1e-3,
                 qf_lr=1e-3,
-                alpha_lr=1e-4,
+                alpha_lr=1e-3,
                 eval_mode=False,
                 actor_losses=list(),
                 qf1_losses=list(),
@@ -65,7 +65,7 @@ class Agent(object):
 
       # Main network
       self.actor = ReparamGaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
-                                          log_type=self.log_type, q=self.entropic_index).to(device)
+                                       action_scale=self.act_limit, log_type=self.log_type, q=self.entropic_index).to(device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       # Target network
