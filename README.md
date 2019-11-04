@@ -56,7 +56,7 @@ The repository's high-level structure is:
     ├── tests
         └── save_model
 
-#### 1) How to train the agents on the environments
+### 1) How to train the agents on the environments
 
 To train all the different agents on MuJoCo environments, follow these steps:
 
@@ -73,7 +73,7 @@ If you want to change configurations of the agents, follow this step:
 python run_mujoco.py --env Humanoid-v2 --algo tac --seed 1
 ```
 
-#### 2) How to watch the learned agents on the above environments
+### 2) How to watch the learned agents on the above environments
 
 To watch all the learned agents on MuJoCo environments, follow these steps:
 
