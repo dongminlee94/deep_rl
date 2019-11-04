@@ -146,7 +146,7 @@ def main():
         if not os.path.exists('./tests/save_model'):
             os.mkdir('./tests/save_model')
         
-        ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo + '_' \
+        ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo \
                                                                         + '_i_' + str(i) \
                                                                         + '_st_' + str(total_num_steps) \
                                                                         + '_ep_' + str(train_num_episodes) \
