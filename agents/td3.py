@@ -110,7 +110,7 @@ class Agent(object):
       pi_target = self.actor_target(obs2)
       epsilon = torch.normal(mean=0, std=self.target_noise, size=pi_target.size())
       epsilon = torch.clamp(epsilon, -self.noise_clip, self.noise_clip)
-      pi_target = torch.clamp(pi_target+epsilon, -self.act_limit, self.act_limit)
+      pi_target = torch.clamp(pi_target+epsilon, -self.act_limit, self.act_limit).to(device)
 
       # Min Double-Q: min(Q1‾(s',π(s')), Q2‾(s',π(s')))
       min_q_pi_target = torch.min(self.qf1_target(obs2, pi_target), self.qf2_target(obs2, pi_target)).squeeze(1).to(device)
