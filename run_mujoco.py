@@ -12,8 +12,6 @@ parser.add_argument('--env', type=str, default='HalfCheetah-v2',
                     help='choose an environment between HalfCheetah-v2, Ant-v2, Pusher-v2 and Humanoid-v2')
 parser.add_argument('--algo', type=str, default='sac', 
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
-parser.add_argument('--load', type=str, default=None,
-                    help='copy & paste the saved model name, and load it (ex. --load=...)')
 parser.add_argument('--seed', type=int, default=0, 
                     help='seed for random number generators')
 parser.add_argument('--iterations', type=int, default=200, 
