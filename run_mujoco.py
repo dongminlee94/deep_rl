@@ -133,6 +133,7 @@ def main():
         writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, train_num_episodes)
 
         print('---------------------------------------')
+        print('Iterations:', i)
         print('Episodes:', train_num_episodes)
         print('Steps:', total_num_steps)
         print('AverageReturn:', round(train_average_return, 2))
