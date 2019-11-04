@@ -108,8 +108,8 @@ class Agent(object):
 
       # Target policy smoothing, by adding clipped noise to target actions
       pi_target = self.actor_target(obs2)
-      epsilon = torch.normal(mean=0, std=self.target_noise, size=pi_target.size())
-      epsilon = torch.clamp(epsilon, -self.noise_clip, self.noise_clip)
+      epsilon = torch.normal(mean=0, std=self.target_noise, size=pi_target.size()).to(device)
+      epsilon = torch.clamp(epsilon, -self.noise_clip, self.noise_clip).to(device)
       pi_target = torch.clamp(pi_target+epsilon, -self.act_limit, self.act_limit).to(device)
 
       # Min Double-Q: min(Q1‾(s',π(s')), Q2‾(s',π(s')))
