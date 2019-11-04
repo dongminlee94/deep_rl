@@ -10,12 +10,14 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch in MuJoCo environments')
 parser.add_argument('--env', type=str, default='HalfCheetah-v2', 
                     help='choose an environment between HalfCheetah-v2, Ant-v2, Pusher-v2 and Humanoid-v2')
-parser.add_argument('--algo', type=str, default='ddpg', 
+parser.add_argument('--algo', type=str, default='sac', 
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--seed', type=int, default=0, 
                     help='seed for random number generators')
-parser.add_argument('--iterations', type=int, default=100, 
+parser.add_argument('--iterations', type=int, default=200, 
                     help='iterations to run and train agent')
+parser.add_argument('--steps_per_iter', type=int, default=5000, 
+                    help='steps of interaction for the agent and the environment in each epoch')
 parser.add_argument('--max_step', type=int, default=1000,
                     help='max episode step')
 args = parser.parse_args()
@@ -84,72 +86,74 @@ def main():
 
     start_time = time.time()
 
-    train_step_count = 0
+    total_num_steps = 0
     train_sum_returns = 0.
     train_num_episodes = 0
 
-    # Runs a full experiment, spread over multiple training episodes
+    # Main loop
     for i in range(args.iterations):
-        # Perform the training phase, during which the agent learns
-        agent.eval_mode = False
-        
-        # Run one episode
-        train_step_length, train_episode_return = agent.run()
-        
-        train_step_count += train_step_length
-        train_sum_returns += train_episode_return
-        train_num_episodes += 1
+        train_step_count = 0
+        while train_step_count <= args.steps_per_iter:
+            # Perform the training phase, during which the agent learns
+            agent.eval_mode = False
+            
+            # Run one episode
+            train_step_length, train_episode_return = agent.run()
+            
+            total_num_steps += train_step_length
+            train_step_count += train_step_length
+            train_sum_returns += train_episode_return
+            train_num_episodes += 1
 
-        train_average_return = train_sum_returns / train_num_episodes if train_num_episodes > 0 else 0.0
+            train_average_return = train_sum_returns / train_num_episodes if train_num_episodes > 0 else 0.0
 
-        # Log experiment result for training episodes
-        writer.add_scalar('Train/AverageReturns', train_average_return, episode)
-        writer.add_scalar('Train/EpisodeReturns', train_episode_return, episode)
-        if args.algo == 'asac' or args.algo == 'atac':
-            writer.add_scalar('Train/Alpha', agent.alpha, episode)
+            # Log experiment result for training episodes
+            writer.add_scalar('Train/AverageReturns', train_average_return, train_num_episodes)
+            writer.add_scalar('Train/EpisodeReturns', train_episode_return, train_num_episodes)
+            if args.algo == 'asac' or args.algo == 'atac':
+                writer.add_scalar('Train/Alpha', agent.alpha, train_num_episodes)
 
         # Perform the evaluation phase -- no learning
-        if (i > 0) and (i % 10 == 0):
-            agent.eval_mode = True
-            
-            eval_sum_returns = 0.
-            eval_num_episodes = 0
+        agent.eval_mode = True
+        
+        eval_sum_returns = 0.
+        eval_num_episodes = 0
 
-            for _ in range(10):
-                # Run one episode
-                eval_step_length, eval_episode_return = agent.run()
+        for _ in range(10):
+            # Run one episode
+            eval_step_length, eval_episode_return = agent.run()
 
-                eval_sum_returns += eval_episode_return
-                eval_num_episodes += 1
+            eval_sum_returns += eval_episode_return
+            eval_num_episodes += 1
 
-                eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
+        eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
 
-                # Log experiment result for evaluation episodes
-                writer.add_scalar('Eval/AverageReturns', eval_average_return, episode)
-                writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, episode)
+        # Log experiment result for evaluation episodes
+        writer.add_scalar('Eval/AverageReturns', eval_average_return, train_num_episodes)
+        writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, train_num_episodes)
 
-            print('---------------------------------------')
-            print('Episodes:', train_num_episodes)
-            print('Steps:', train_step_count)
-            print('AverageReturn:', round(train_average_return, 2))
-            print('EvalEpisodes:', eval_num_episodes)
-            print('EvalAverageReturn:', round(eval_average_return, 2))
-            print('OtherLogs:', agent.logger)
-            print('Time:', int(time.time() - start_time))
-            print('---------------------------------------')
+        print('---------------------------------------')
+        print('Episodes:', train_num_episodes)
+        print('Steps:', total_num_steps)
+        print('AverageReturn:', round(train_average_return, 2))
+        print('EvalEpisodes:', eval_num_episodes)
+        print('EvalAverageReturn:', round(eval_average_return, 2))
+        print('OtherLogs:', agent.logger)
+        print('Time:', int(time.time() - start_time))
+        print('---------------------------------------')
 
-            # Save a training model
-            if not os.path.exists('./tests/save_model'):
-                os.mkdir('./tests/save_model')
-            
-            save_name = args.env + '_' + args.algo
-            ckpt_path = os.path.join('./tests/save_model/' + save_name + '_i_' + str(i) \
-                                                                       + '_ep_' + str(train_num_episodes) \
-                                                                       + '_st_' + str(train_step_count) \
-                                                                       + '_rt_' + str(round(train_average_return, 2)) \
-                                                                       + '_t_' + str(int(time.time() - start_time)) + '.pt')
-            
-            torch.save(agent.actor.state_dict(), ckpt_path)
+        # Save a training model
+        if not os.path.exists('./tests/save_model'):
+            os.mkdir('./tests/save_model')
+        
+        save_name = args.env + '_' + args.algo
+        ckpt_path = os.path.join('./tests/save_model/' + save_name + '_i_' + str(i) \
+                                                                   + '_st_' + str(total_num_steps) \
+                                                                   + '_ep_' + str(train_num_episodes) \
+                                                                   + '_rt_' + str(round(train_average_return, 2)) \
+                                                                   + '_t_' + str(int(time.time() - start_time)) + '.pt')
+        
+        torch.save(agent.actor.state_dict(), ckpt_path)
 
 if __name__ == "__main__":
     main()

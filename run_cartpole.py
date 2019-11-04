@@ -52,7 +52,7 @@ def main():
 
     start_time = time.time()
 
-    train_step_count = 0
+    train_num_steps = 0
     train_sum_returns = 0.
     train_num_episodes = 0
 
@@ -64,7 +64,7 @@ def main():
         # Run one episode
         train_step_length, train_episode_return = agent.run()
         
-        train_step_count += train_step_length
+        train_num_steps += train_step_length
         train_sum_returns += train_episode_return
         train_num_episodes += 1
 
@@ -96,7 +96,7 @@ def main():
 
             print('---------------------------------------')
             print('Episodes:', train_num_episodes)
-            print('Steps:', train_step_count)
+            print('Steps:', train_num_steps)
             print('AverageReturn:', round(train_average_return, 2))
             print('EvalEpisodes:', eval_num_episodes)
             print('EvalAverageReturn:', round(eval_average_return, 2))
