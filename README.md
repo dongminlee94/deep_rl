@@ -2,7 +2,7 @@
 
 This repository contains PyTorch implementations of deep reinforcement learning algorithms.
 
-This implementation uses PyTorch. For a TensorFlow implementation of algorithms, take a look at [tsallis_actor_critic_mujoco](https://github.com/rllab-snu/tsallis_actor_critic_mujoco).
+This implementation uses PyTorch. For a TensorFlow implementation of algorithms, take a look at [tac_mujoco](https://github.com/rllab-snu/tsallis_actor_critic_mujoco).
 
 ## Algorithms Implemented
 
@@ -24,9 +24,31 @@ This implementation uses PyTorch. For a TensorFlow implementation of algorithms,
 
 1. CartPole-v1 <sub><sup> (as described in [here](https://gym.openai.com/envs/CartPole-v1/)) </sup></sub>
 2. Pendulum-v0 <sub><sup> (as described in [here](https://gym.openai.com/envs/Pendulum-v0/)) </sup></sub>
-3. MuJoCo environments (Hopper-v2, HalfCheetah-v2, Ant-v2, Humanoid-v2, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#mujoco)) </sup></sub>
+3. MuJoCo environments (HalfCheetah-v2, Ant-v2, Pusher-v2, Humanoid-v2, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#mujoco)) </sup></sub>
 
 ## Results
+
+### CartPole
+
+<img src="results/graphs/cartpole.png" width="500"/>
+
+### Pendulum
+
+<img src="results/graphs/pendulum.png" width="500"/>
+
+### HalfCheetah
+
+TBD
+
+### Ant
+
+TBD
+
+### Pusher
+
+TBD
+
+### Humanoid
 
 TBD
 
