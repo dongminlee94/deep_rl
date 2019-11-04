@@ -1,5 +1,7 @@
 # Deep Reinforcement Learning (DRL) Algorithms with PyTorch
 
+<img src="imgs/rl.png" width="500"/>
+
 This repository contains PyTorch implementations of deep reinforcement learning algorithms. This implementation uses PyTorch. For a TensorFlow implementation of algorithms, take a look at [tsallis_actor_critic_mujoco](https://github.com/rllab-snu/tsallis_actor_critic_mujoco).
 
 ## Algorithms Implemented

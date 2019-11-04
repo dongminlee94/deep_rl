@@ -148,8 +148,8 @@ def main():
                                                                                 + '_t_' + str(int(time.time() - start_time)) + '.pt')
                 
                 torch.save({
-                    'actor': actor.state_dict(),
-                    'critic': critic.state_dict()
+                    'actor': agent.actor.state_dict(),
+                    'critic': agent.critic.state_dict()
                 }, ckpt_path)
 
 if __name__ == "__main__":
