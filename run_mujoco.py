@@ -144,6 +144,7 @@ def main():
         print('---------------------------------------')
 
         # Save a training model
+        if (i > 0) and (i % 10 == 0):
         if not os.path.exists('./tests/save_model'):
             os.mkdir('./tests/save_model')
         
