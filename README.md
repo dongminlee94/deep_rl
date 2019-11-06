@@ -77,7 +77,11 @@ If you want to change configurations of the agents, follow this step:
 ```commandline
 python run_mujoco.py \
     --env=Humanoid-v2 \
-    --algo=tac --seed=1 \
+    --algo=tac \
+    --seed=1 \
+    --iterations=200 \
+    --steps_per_iter=4000 \
+    --max_step=1000
 ```
 
 ### 2) To watch the learned agents on the above environments
