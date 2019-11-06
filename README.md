@@ -42,6 +42,13 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 ### Humanoid
 
+## Requirements
+
+- [PyTorch](https://pytorch.org/get-started/locally/)
+- [TensorBoard](https://pytorch.org/docs/stable/tensorboard.html)
+- [gym](https://github.com/openai/gym)
+- [mujoco-py](https://github.com/openai/mujoco-py)
+
 ## Usage
 
 The repository's high-level structure is:
@@ -68,7 +75,9 @@ For other environments, change the last line to `run_cartpole.py`, `run_pendulum
 
 If you want to change configurations of the agents, follow this step:
 ```commandline
-python run_mujoco.py --env=Humanoid-v2 --algo=tac --seed=1
+python run_mujoco.py \
+    --env=Humanoid-v2 \
+    --algo=tac --seed=1 \
 ```
 
 ### 2) To watch the learned agents on the above environments

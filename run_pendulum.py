@@ -8,6 +8,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch in Pendulum environment')
+parser.add_argument('--env', type=str, default='Pendulum-v0', 
+                    help='pendulum environment')
 parser.add_argument('--algo', type=str, default='tac', 
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--seed', type=int, default=0, 
@@ -48,7 +50,7 @@ elif args.algo == 'atac': # Automating entropy adjustment on TAC
 def main():
     """Main."""
     # Initialize environment
-    env = gym.make('Pendulum-v0')
+    env = gym.make(args.env)
     obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
     act_limit = env.action_space.high[0]
@@ -76,7 +78,7 @@ def main():
         agent = Agent(env, args, obs_dim, act_dim, act_limit)
 
     # Create a SummaryWriter object by TensorBoard
-    dir_name = 'runs/' + 'Pendulum-v0/' + args.algo + '/' + str(args.seed) + '_' + time.ctime()
+    dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) + '_' + time.ctime()
     writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
@@ -140,7 +142,7 @@ def main():
                 if not os.path.exists('./tests/save_model'):
                     os.mkdir('./tests/save_model')
                 
-                ckpt_path = os.path.join('./tests/save_model/' + 'Pendulum-v0_' + args.algo \
+                ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo \
                                                                                 + '_ep_' + str(train_num_episodes) \
                                                                                 + '_rt_' + str(round(eval_average_return, 2)) \
                                                                                 + '_t_' + str(int(time.time() - start_time)) + '.pt')

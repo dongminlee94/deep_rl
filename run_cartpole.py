@@ -8,6 +8,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch in CartPole environment')
+parser.add_argument('--env', type=str, default='CartPole-v1', 
+                    help='cartpole environment')
 parser.add_argument('--algo', type=str, default='dqn', 
                     help='select an algorithm among dqn, ddqn, a2c')
 parser.add_argument('--seed', type=int, default=0, 
@@ -34,7 +36,7 @@ elif args.algo == 'a2c':
 def main():
     """Main."""
     # Initialize environment
-    env = gym.make('CartPole-v1')
+    env = gym.make(args.env)
     obs_dim = env.observation_space.shape[0]
     act_num = env.action_space.n
     print('State dimension:', obs_dim)
@@ -49,7 +51,7 @@ def main():
     agent = Agent(env, args, obs_dim, act_num)
 
     # Create a SummaryWriter object by TensorBoard
-    dir_name = 'runs/' + 'CartPole-v1/' + args.algo + '/' + str(args.seed) + '_' + time.ctime()
+    dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) + '_' + time.ctime()
     writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
@@ -111,7 +113,7 @@ def main():
                 if not os.path.exists('./tests/save_model'):
                     os.mkdir('./tests/save_model')
                 
-                ckpt_path = os.path.join('./tests/save_model/' + 'CartPole-v1_' + args.algo \
+                ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo \
                                                                                 + '_ep_' + str(train_num_episodes) \
                                                                                 + '_rt_' + str(round(eval_average_return, 2)) \
                                                                                 + '_t_' + str(int(time.time() - start_time)) + '.pt')
