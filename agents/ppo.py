@@ -79,7 +79,7 @@ class Agent(object):
 
       # Prediction logπ_old(s), logπ(s), V(s)
       _, _, dist_old, _ = self.actor(obs)
-      log_pi_old = dist_old.log_prob(act).squeeze(1)
+      log_pi_old = dist_old.log_prob(act)
       log_pi_old = log_pi_old.detach()
       v_old = self.critic(obs).squeeze(1)
       v_old = v_old.detach()
@@ -113,7 +113,7 @@ class Agent(object):
                print("mini_v_old", mini_v_old.shape)
 
             _, _, dist, _ = self.actor(mini_obs)
-            mini_log_pi = dist.log_prob(mini_act).squeeze(1)
+            mini_log_pi = dist.log_prob(mini_act)
             mini_v = self.critic(mini_obs).squeeze(1)
 
             # PPO losses
@@ -140,7 +140,7 @@ class Agent(object):
 
       # Info (useful to watch during learning)
       _, _, dist, _ = self.actor(obs)
-      log_pi = dist.log_prob(act).squeeze(1)
+      log_pi = dist.log_prob(act)
       approx_kl = (log_pi_old - log_pi).mean()     # a sample estimate for KL-divergence, easy to compute
       approx_ent = dist.entropy().mean()           # a sample estimate for entropy, also easy to compute
 

@@ -164,10 +164,10 @@ class Agent(object):
 
       # Prediction logπ_old(s), logπ(s), V(s)
       _, _, dist_old, _ = self.actor(obs)
-      log_pi_old = dist_old.log_prob(act).squeeze(1)
+      log_pi_old = dist_old.log_prob(act)
       log_pi_old = log_pi_old.detach()
       _, _, dist, _ = self.actor(obs)
-      log_pi = dist.log_prob(act).squeeze(1)
+      log_pi = dist.log_prob(act)
       v = self.critic(obs).squeeze(1)
       
       if 0: # Check shape of prediction
@@ -203,7 +203,7 @@ class Agent(object):
          self.update_model(self.actor, params)
 
          _, _, dist, _ = self.actor(obs)
-         log_pi = dist.log_prob(act).squeeze(1)
+         log_pi = dist.log_prob(act)
          ratio = torch.exp(log_pi - log_pi_old)
          actor_loss = (ratio*adv).mean()
 
@@ -218,7 +218,7 @@ class Agent(object):
             self.update_model(self.actor, params)
 
             _, _, dist, _ = self.actor(obs)
-            log_pi = dist.log_prob(act).squeeze(1)
+            log_pi = dist.log_prob(act)
             ratio = torch.exp(log_pi - log_pi_old)
             actor_loss = (ratio*adv).mean()
 

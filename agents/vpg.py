@@ -81,7 +81,7 @@ class Agent(object):
 
       # Prediction logπ(s), V(s)
       _, _, dist_old, _ = self.actor(obs)
-      log_pi_old = dist_old.log_prob(act).squeeze(1)
+      log_pi_old = dist_old.log_prob(act)
       v = self.critic(obs).squeeze(1)
       
       if 0: # Check shape of prediction
@@ -105,7 +105,7 @@ class Agent(object):
 
       # Info (useful to watch during learning)
       _, _, dist, _ = self.actor(obs)
-      log_pi = dist.log_prob(act).squeeze(1)
+      log_pi = dist.log_prob(act)
       approx_kl = (log_pi_old - log_pi).mean()     # a sample estimate for KL-divergence, easy to compute
       approx_ent = dist.entropy().mean()           # a sample estimate for entropy, also easy to compute
 
