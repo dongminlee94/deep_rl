@@ -66,9 +66,9 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.actor = GaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes).to(device)
-      self.old_actor = GaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes).to(device)
-      self.critic = MLP(self.obs_dim, 1, hidden_sizes=self.hidden_sizes, activation=torch.tanh).to(device)
+      self.actor = GaussianPolicy(self.obs_dim, self.act_dim).to(device)
+      self.old_actor = GaussianPolicy(self.obs_dim, self.act_dim).to(device)
+      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(device)
       
       # Create optimizers
       self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
