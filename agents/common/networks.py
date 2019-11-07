@@ -148,7 +148,7 @@ class ReparamGaussianPolicy(MLP):
     def tsallis_entropy_log_q(self, x, q):
         safe_x = torch.max(x, torch.Tensor([1e-6]).to(device))
         log_q_x = torch.log(safe_x) if q==1. else (safe_x.pow(1-q)-1)/(1-q)
-        return log_q_x
+        return log_q_x.sum(dim=-1)
         
     def forward(self, x):
         x = super(ReparamGaussianPolicy, self).forward(x)
@@ -173,7 +173,7 @@ class ReparamGaussianPolicy(MLP):
             if self.q == 1.:
                 log_q_pi = log_pi
             else:
-                exp_log_pi = torch.exp(log_pi)
+                # exp_log_pi = torch.exp(log_pi)
                 log_q_pi = self.tsallis_entropy_log_q(exp_log_pi, self.q)
             # make sure actions are in correct range
             mu = mu * self.action_scale
