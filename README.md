@@ -78,7 +78,7 @@ If you want to change configurations of the agents, follow this step:
 python run_mujoco.py \
     --env=Humanoid-v2 \
     --algo=tac \
-    --seed=1 \
+    --seed=0 \
     --iterations=200 \
     --steps_per_iter=4000 \
     --max_step=1000

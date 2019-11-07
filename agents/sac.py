@@ -21,7 +21,7 @@ class Agent(object):
                 act_limit,
                 steps=0,
                 gamma=0.99,
-                alpha=0.7,
+                alpha=0.2,
                 log_type='log',
                 entropic_index=1.5,
                 automatic_entropy_tuning=False,

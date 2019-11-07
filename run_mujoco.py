@@ -2,6 +2,7 @@ import os
 import gym
 import time
 import argparse
+import datetime
 import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -81,7 +82,8 @@ def main():
                     hidden_sizes=(400,300), sample_size=4000)
 
     # Create a SummaryWriter object by TensorBoard
-    dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) + '_' + time.ctime()
+    dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) \
+                + '_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
