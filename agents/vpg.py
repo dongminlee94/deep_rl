@@ -22,7 +22,7 @@ class Agent(object):
                 steps=0,
                 gamma=0.99,
                 lam=0.97,
-                hidden_sizes=(128,128),
+                hidden_sizes=(64,64),
                 sample_size=2000,
                 actor_lr=1e-3,
                 critic_lr=1e-3,
