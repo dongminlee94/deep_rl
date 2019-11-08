@@ -145,7 +145,11 @@ class ReparamGaussianPolicy(MLP):
         if self.log_type == 'log':
             log_pi = log_pi - torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6), dim=-1)
         elif self.log_type == 'log-q':
-            log_pi = log_pi - torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6)
+            print("pi", pi.shape)
+            print("log_pi", log_pi.shape)
+            squa = torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6)
+            print("squa", squa.shape)
+            log_pi = log_pi - squa
         return mu, pi, log_pi
 
     def tsallis_entropy_log_q(self, x, q):
