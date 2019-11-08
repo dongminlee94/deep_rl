@@ -74,7 +74,7 @@ def main():
         agent = Agent(env, args, obs_dim, act_dim, act_limit, log_type='log-q', entropic_index=1.5)
     elif args.algo == 'atac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, 
-                        log_type='log-q', entropic_index=0.7, automatic_entropy_tuning=True)
+                        log_type='log-q', entropic_index=1.5, automatic_entropy_tuning=True)
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, obs_dim, act_dim, act_limit)
 
