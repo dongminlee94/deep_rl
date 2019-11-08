@@ -180,6 +180,7 @@ class ReparamGaussianPolicy(MLP):
             return mu, pi, log_pi
         elif self.log_type == 'log-q':
             log_pi = dist.log_prob(pi)
+            print("log_pi 이전", log_pi.shape)
             mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
             if self.q == 1.:
                 log_q_pi = log_pi.sum(dim=-1)
