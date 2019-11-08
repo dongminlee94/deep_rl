@@ -143,9 +143,9 @@ class ReparamGaussianPolicy(MLP):
         pi = torch.tanh(pi)
         # To avoid evil machine precision error, strictly clip 1-pi**2 to [0,1] range.
         if self.log_type == 'log':
-            log_pi -= torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6), dim=-1)
+            log_pi = log_pi - torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6), dim=-1)
         elif self.log_type == 'log-q':
-            log_pi -= torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6)
+            log_pi = log_pi - torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6)
         return mu, pi, log_pi
 
     def tsallis_entropy_log_q(self, x, q):
