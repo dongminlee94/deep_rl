@@ -143,13 +143,9 @@ class ReparamGaussianPolicy(MLP):
         pi = torch.tanh(pi)
         # To avoid evil machine precision error, strictly clip 1-pi**2 to [0,1] range.
         if self.log_type == 'log':
-            log_pi = log_pi - torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6), dim=-1)
+            log_pi -= torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6), dim=-1)
         elif self.log_type == 'log-q':
-            print("pi", pi.shape)
-            print("log_pi", log_pi.shape)
-            squa = torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6)
-            print("squa", squa.shape)
-            log_pi = log_pi - squa
+            log_pi -= torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6)
         return mu, pi, log_pi
 
     def tsallis_entropy_log_q(self, x, q):
@@ -168,8 +164,6 @@ class ReparamGaussianPolicy(MLP):
         # https://pytorch.org/docs/stable/distributions.html#normal
         dist = Normal(mu, std)
         pi = dist.rsample() # reparameterization trick (mean + std * N(0,1))
-        log_pi = dist.log_prob(pi).sum(dim=-1)
-        mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
 
         if self.log_type == 'log':
             log_pi = dist.log_prob(pi).sum(dim=-1)
@@ -180,7 +174,6 @@ class ReparamGaussianPolicy(MLP):
             return mu, pi, log_pi
         elif self.log_type == 'log-q':
             log_pi = dist.log_prob(pi)
-            print("log_pi 이전", log_pi.shape)
             mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
             if self.q == 1.:
                 log_q_pi = log_pi.sum(dim=-1)
