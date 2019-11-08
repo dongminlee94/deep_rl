@@ -62,21 +62,21 @@ def main():
     # Create an agent
     if args.algo == 'ddpg' or args.algo == 'td3':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, act_noise=0.1, 
-                    hidden_sizes=(256,256), buffer_size=int(1e6), batch_size=256)
+                    hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     elif args.algo == 'sac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.2, 
-                    hidden_sizes=(256,256), buffer_size=int(1e6), batch_size=256)
+                    hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     elif args.algo == 'asac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True, 
-                    hidden_sizes=(256,256), buffer_size=int(1e6), batch_size=256)
+                    hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     elif args.algo == 'tac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.2, 
                     log_type='log-q', entropic_index=1.5, 
-                    hidden_sizes=(256,256), buffer_size=int(1e6), batch_size=256)
+                    hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     elif args.algo == 'atac':
         agent = Agent(env, args, obs_dim, act_dim, act_limit, 
                     log_type='log-q', entropic_index=1.5, automatic_entropy_tuning=True,
-                    hidden_sizes=(256,256), buffer_size=int(1e6), batch_size=256)
+                    hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, obs_dim, act_dim, act_limit, sample_size=4000)
 
