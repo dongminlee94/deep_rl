@@ -173,8 +173,7 @@ class ReparamGaussianPolicy(MLP):
             if self.q == 1.:
                 log_q_pi = log_pi
             else:
-                exp_log_pi = torch.exp(log_pi)
-                log_q_pi = self.tsallis_entropy_log_q(exp_log_pi, self.q)
+                log_q_pi = self.tsallis_entropy_log_q(pi, self.q)
             # make sure actions are in correct range
             mu = mu * self.action_scale
             pi = pi * self.action_scale
