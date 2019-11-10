@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch in Pendulum environment')
 parser.add_argument('--env', type=str, default='Pendulum-v0', 
                     help='pendulum environment')
-parser.add_argument('--algo', type=str, default='tac', 
+parser.add_argument('--algo', type=str, default='atac', 
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--seed', type=int, default=0, 
                     help='seed for random number generators')
