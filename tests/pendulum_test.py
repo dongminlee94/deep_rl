@@ -7,7 +7,7 @@ from common.networks import *
 
 # Configurations
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo', type=str, default='sac',
+parser.add_argument('--algo', type=str, default='atac',
                     help='select an algorithm among vpg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--load', type=str, default=None,
                     help='copy & paste the saved model name, and load it (ex. --load=Pendulum-v0/...)')
@@ -25,7 +25,7 @@ def main():
     act_dim = env.action_space.shape[0]
 
     if args.algo == 'trpo' or args.algo == 'ppo':
-        mlp = GaussianPolicy(obs_dim, act_dim, hidden_sizes=(128,128)).to(device)
+        mlp = GaussianPolicy(obs_dim, act_dim).to(device)
     elif args.algo == 'ddpg' or args.algo == 'td3':
         mlp = MLP(obs_dim, act_dim, hidden_sizes=(128,128), output_activation=torch.tanh).to(device)
     elif args.algo == 'sac' or args.algo == 'asac' or args.algo == 'tac' or args.algo == 'atac':

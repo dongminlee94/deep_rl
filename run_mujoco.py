@@ -108,7 +108,7 @@ def main():
 
             train_average_return = train_sum_returns / train_num_episodes if train_num_episodes > 0 else 0.0
 
-            # Log experiment result for training episodes
+            # Log experiment result for training steps
             writer.add_scalar('Train/AverageReturns', train_average_return, total_num_steps)
             writer.add_scalar('Train/EpisodeReturns', train_episode_return, total_num_steps)
             if args.algo == 'asac' or args.algo == 'atac':
@@ -129,7 +129,7 @@ def main():
 
         eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
 
-        # Log experiment result for evaluation episodes
+        # Log experiment result for evaluation steps
         writer.add_scalar('Eval/AverageReturns', eval_average_return, total_num_steps)
         writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, total_num_steps)
 
