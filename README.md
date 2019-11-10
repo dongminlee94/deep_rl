@@ -22,7 +22,7 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 1. CartPole-v1 <sub><sup> (as described in [here](https://gym.openai.com/envs/CartPole-v1/)) </sup></sub>
 2. Pendulum-v0 <sub><sup> (as described in [here](https://gym.openai.com/envs/Pendulum-v0/)) </sup></sub>
-3. MuJoCo environments (HalfCheetah-v2, Ant-v2, Pusher-v2, Humanoid-v2, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#mujoco)) </sup></sub>
+3. MuJoCo environments (HalfCheetah-v2, Ant-v2, Humanoid-v2, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#mujoco)) </sup></sub>
 
 ## Results
 
@@ -37,8 +37,6 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 ### HalfCheetah
 
 ### Ant
-
-### Pusher
 
 ### Humanoid
 
@@ -77,7 +75,7 @@ If you want to change configurations of the agents, follow this step:
 ```commandline
 python run_mujoco.py \
     --env=Humanoid-v2 \
-    --algo=tac \
+    --algo=atac \
     --seed=0 \
     --iterations=200 \
     --steps_per_iter=4000 \
