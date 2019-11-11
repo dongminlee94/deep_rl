@@ -78,7 +78,7 @@ def main():
                     log_type='log-q', entropic_index=1.5, automatic_entropy_tuning=True,
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     else: # vpg, npg, trpo, ppo
-        agent = Agent(env, args, obs_dim, act_dim, act_limit, sample_size=4000)
+        agent = Agent(env, args, obs_dim, act_dim, act_limit, hidden_sizes=(300,300), sample_size=4000)
 
     # Create a SummaryWriter object by TensorBoard
     dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) \
