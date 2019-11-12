@@ -26,21 +26,21 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 ## Results
 
-### CartPole
+### CartPole-v1
 
 <img src="results/graphs/cartpole.png" width="1000"/>
 
-### Pendulum
+### Pendulum-v0
 
 <img src="results/graphs/pendulum.png" width="1000"/>
 
-### HalfCheetah
+### HalfCheetah-v2
 
 <img src="results/graphs/halfcheetah.png" width="1000"/>
 
-### Ant
+### Ant-v2
 
-### Humanoid
+### Humanoid-v2
 
 ## Requirements
 
