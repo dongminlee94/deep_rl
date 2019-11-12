@@ -36,6 +36,8 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 ### HalfCheetah
 
+<img src="results/graphs/halfcheetah.png" width="1000"/>
+
 ### Ant
 
 ### Humanoid
