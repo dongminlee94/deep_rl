@@ -79,14 +79,14 @@ class Agent(object):
    def cg(self, obs, b, cg_iters=10, EPS=1e-8, residual_tol=1e-10):
       # Conjugate gradient algorithm
       # (https://en.wikipedia.org/wiki/Conjugate_gradient_method)
-      x = torch.zeros(b.size())
+      x = torch.zeros(b.size()).to(device)
       r = b.clone()
       p = r.clone()
-      rdotr = torch.dot(r,r)
+      rdotr = torch.dot(r,r).to(device)
 
       for _ in range(cg_iters):
          Ap = self.hessian_vector_product(obs, p)
-         alpha = rdotr / (torch.dot(p, Ap) + EPS)
+         alpha = rdotr / (torch.dot(p, Ap).to(device) + EPS)
          
          x += alpha * p
          r -= alpha * Ap
