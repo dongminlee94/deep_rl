@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--algo', type=str, default='atac',
                     help='select an algorithm among vpg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--load', type=str, default=None,
-                    help='copy & paste the saved model name, and load it (ex. --load=Pendulum-v0_...)')
+                    help='copy & paste the saved model name, and load it (ex. --load=Humanoid-v2_...)')
 parser.add_argument('--render', action="store_true", default=True,
                     help='if you want to render, set this to True')
 parser.add_argument('--test_eps', type=int, default=10000,
@@ -20,16 +20,16 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def main():
     """Main."""
-    env = gym.make('Pendulum-v0')
+    env = gym.make('Humanoid-v2')
     obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
 
     if args.algo == 'trpo' or args.algo == 'ppo':
         mlp = GaussianPolicy(obs_dim, act_dim).to(device)
     elif args.algo == 'ddpg' or args.algo == 'td3':
-        mlp = MLP(obs_dim, act_dim, hidden_sizes=(128,128), output_activation=torch.tanh).to(device)
+        mlp = MLP(obs_dim, act_dim, hidden_sizes=(300,300), output_activation=torch.tanh).to(device)
     elif args.algo == 'sac' or args.algo == 'asac' or args.algo == 'tac' or args.algo == 'atac':
-        mlp = ReparamGaussianPolicy(obs_dim, act_dim, hidden_sizes=(128,128)).to(device)
+        mlp = ReparamGaussianPolicy(obs_dim, act_dim, hidden_sizes=(300,300)).to(device)
 
     if args.load is not None:
         pretrained_model_path = os.path.join('./save_model/' + str(args.load))

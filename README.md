@@ -105,7 +105,7 @@ To watch all the learned agents on MuJoCo environments, follow these steps:
 
 ```commandline
 cd tests
-python mujoco_test.py --load=env_name/algo_name/...
+python mujoco_test.py --load=envname_algoname_...
 ```
 
-You should copy the saved model name in `tests/save_model/env_name/algo_name/...` and paste the copied name in `...`. So the saved model will be load.
+You should copy the saved model name in `tests/save_model/envname_algoname_...` and paste the copied name in `...`. So the saved model will be load.
