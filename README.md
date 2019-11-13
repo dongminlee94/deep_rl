@@ -26,21 +26,36 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 ## Results
 
-### CartPole-v1 (observation space: 4, action space: 2)
+### CartPole-v1
+
+- Observation space: 4
+- Action space: 2
 
 <img src="results/graphs/cartpole.png" width="1000"/>
 
-### Pendulum-v0 (observation space: 3, action space: 1)
+### Pendulum-v0
+
+- Observation space: 3
+- Action space: 1
 
 <img src="results/graphs/pendulum.png" width="1000"/>
 
-### HalfCheetah-v2 (observation space: 17, action space: 6)
+### HalfCheetah-v2
+
+- Observation space: 17
+- Action space: 6
 
 <img src="results/graphs/halfcheetah.png" width="1000"/>
 
-### Ant-v2 (observation space: 111, action space: 8)
+### Ant-v2
 
-### Humanoid-v2 (observation space: 376, action space: 17)
+- Observation space: 111
+- Action space: 8
+
+### Humanoid-v2
+
+- Observation space: 376
+- Action space: 17
 
 ## Requirements
 
