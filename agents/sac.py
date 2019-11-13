@@ -11,7 +11,10 @@ from agents.common.networks import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of SAC, Automatic entropy adjustment SAC (ASAC), TAC agents."""
+   """
+   An implementation of Soft Actor-Critic (SAC), Automatic entropy adjustment SAC (ASAC), 
+   Tsallis Actor-Critic (TAC) and Automatic entropy adjustment TAC (ATAC) agents.
+   """
 
    def __init__(self,
                 env,

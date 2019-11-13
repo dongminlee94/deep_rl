@@ -11,7 +11,10 @@ from agents.common.networks import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of the VPG (with GAE-Lambda for advantage estimation) agent."""
+   """
+   An implementation of the Vanilla Policy Gradient (VPG) agent
+   with GAE-Lambda for advantage estimation.
+   """
 
    def __init__(self,
                 env,

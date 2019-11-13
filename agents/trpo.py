@@ -11,7 +11,10 @@ from agents.common.networks import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
-   """An implementation of the TRPO (with support for NPG) agent."""
+   """
+   An implementation of the Trust Region Policy Optimization (TRPO) agent
+   with support for Natural Policy Gradient (NPG).
+   """
 
    def __init__(self,
                 env,
