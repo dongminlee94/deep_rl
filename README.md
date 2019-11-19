@@ -52,6 +52,8 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 - Observation space: 111
 - Action space: 8
 
+<img src="results/graphs/ant.png" width="1000"/>
+
 ### Humanoid-v2
 
 - Observation space: 376
@@ -95,7 +97,7 @@ python run_mujoco.py \
     --algo=atac \
     --seed=0 \
     --iterations=200 \
-    --steps_per_iter=4000 \
+    --steps_per_iter=5000 \
     --max_step=1000
 ```
 
