@@ -112,7 +112,7 @@ def main():
             writer.add_scalar('Train/AverageReturns', train_average_return, total_num_steps)
             writer.add_scalar('Train/EpisodeReturns', train_episode_return, total_num_steps)
             if args.algo == 'asac' or args.algo == 'atac':
-                writer.add_scalar('Train/Alpha', agent.alpha, train_num_episodes)
+                writer.add_scalar('Train/Alpha', agent.alpha, total_num_steps)
 
         # Perform the evaluation phase -- no learning
         agent.eval_mode = True
