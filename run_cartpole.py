@@ -116,7 +116,8 @@ def main():
                 
                 ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo \
                                                                                 + '_ep_' + str(train_num_episodes) \
-                                                                                + '_rt_' + str(round(eval_average_return, 2)) \
+                                                                                + '_tr_' + str(round(train_average_return, 2)) \
+                                                                                + '_er_' + str(round(eval_average_return, 2)) \
                                                                                 + '_t_' + str(int(time.time() - start_time)) + '.pt')
                 
                 if args.algo == 'dqn' or args.algo == 'ddqn':
