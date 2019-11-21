@@ -59,6 +59,8 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 - Observation space: 376
 - Action space: 17
 
+<img src="results/graphs/humanoid.png" width="1000"/>
+
 ## Requirements
 
 - [PyTorch](https://pytorch.org/get-started/locally/)
