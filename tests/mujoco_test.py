@@ -7,6 +7,8 @@ from common.networks import *
 
 # Configurations
 parser = argparse.ArgumentParser()
+parser.add_argument('--env', type=str, default='HalfCheetah-v2', 
+                    help='choose an environment between HalfCheetah-v2, Ant-v2 and Humanoid-v2')
 parser.add_argument('--algo', type=str, default='atac',
                     help='select an algorithm among vpg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--load', type=str, default=None,
@@ -20,7 +22,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def main():
     """Main."""
-    env = gym.make('Humanoid-v2')
+    env = gym.make(args.env)
     obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
 
@@ -33,7 +35,7 @@ def main():
 
     if args.load is not None:
         pretrained_model_path = os.path.join('./save_model/' + str(args.load))
-        pretrained_model = torch.load(pretrained_model_path)
+        pretrained_model = torch.load(pretrained_model_path, map_location=device)
         mlp.load_state_dict(pretrained_model)
 
     test_sum_returns = 0.

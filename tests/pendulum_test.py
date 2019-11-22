@@ -33,7 +33,7 @@ def main():
 
     if args.load is not None:
         pretrained_model_path = os.path.join('./save_model/' + str(args.load))
-        pretrained_model = torch.load(pretrained_model_path)
+        pretrained_model = torch.load(pretrained_model_path, map_location=device)
         mlp.load_state_dict(pretrained_model)
 
     test_sum_returns = 0.
