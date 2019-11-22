@@ -112,4 +112,4 @@ cd tests
 python mujoco_test.py --load=envname_algoname_...
 ```
 
-You should copy the saved model name in `tests/save_model/envname_algoname_...` and paste the copied name in `...`. So the saved model will be load.
+You should copy the saved model name in `tests/save_model/envname_algoname_...` and paste the copied name in `envname_algoname_...`. So the saved model will be load.
