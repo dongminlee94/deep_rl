@@ -87,20 +87,17 @@ class Agent(object):
          print("rews", rews.shape)
          print("done", done.shape)
 
-      # Prediction Q(s), Q‾(s')
+      # Prediction Q(s)
       q = self.qf(obs1).gather(1, acts.long()).squeeze(1)
-      q_target = self.qf_target(obs2)
       
       # Target for Q regression
-      if self.args.algo == 'dqn':
-         q_backup = rews + self.gamma*(1-done)*q_target.max(1)[0]
-         q_backup.to(device)
-      else: # Double DQN
+      if self.args.algo == 'dqn':   # DQN
+         q_target = self.qf_target(obs2)
+      else:                         # Double DQN
          q2 = self.qf(obs2)
          q_target = q_target.gather(1, q2.max(1)[1].unsqueeze(1))
-         
-         q_backup = rews + self.gamma*(1-done)*q_target.max(1)[0]
-         q_backup.to(device)
+      q_backup = rews + self.gamma*(1-done)*q_target.max(1)[0]
+      q_backup.to(device)
 
       if 0: # Check shape of prediction and target
          print("q", q.shape)
