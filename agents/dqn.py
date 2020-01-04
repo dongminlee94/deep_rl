@@ -109,7 +109,7 @@ class Agent(object):
       qf_loss.backward()
       self.qf_optimizer.step()
 
-      # Synchronize target parameters 𝜃‾ as 𝜃 every N steps
+      # Synchronize target parameters 𝜃‾ as 𝜃 every C steps
       if self.steps % self.target_update_step == 0:
          hard_target_update(self.qf, self.qf_target)
       
