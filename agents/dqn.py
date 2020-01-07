@@ -95,6 +95,7 @@ class Agent(object):
          q_target = self.qf_target(obs2)
       else:                         # Double DQN
          q2 = self.qf(obs2)
+         q_target = self.qf_target(obs2)
          q_target = q_target.gather(1, q2.max(1)[1].unsqueeze(1))
       q_backup = rews + self.gamma*(1-done)*q_target.max(1)[0]
       q_backup.to(device)
