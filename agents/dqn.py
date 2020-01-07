@@ -91,9 +91,9 @@ class Agent(object):
       q = self.qf(obs1).gather(1, acts.long()).squeeze(1)
       
       # Target for Q regression
-      if self.args.algo == 'dqn':   # DQN
+      if self.args.algo == 'dqn':      # DQN
          q_target = self.qf_target(obs2)
-      else:                         # Double DQN
+      elif self.args.algo == 'ddqn':   # Double DQN
          q2 = self.qf(obs2)
          q_target = self.qf_target(obs2)
          q_target = q_target.gather(1, q2.max(1)[1].unsqueeze(1))
