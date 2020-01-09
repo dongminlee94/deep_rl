@@ -18,7 +18,7 @@ class Agent(object):
                 steps=0,
                 gamma=0.99,
                 ent_coef=1e-3,
-                actor_lr=1e-4,
+                actor_lr=1e-3,
                 critic_lr=1e-3,
                 eval_mode=False,
                 actor_losses=list(),
