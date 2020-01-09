@@ -49,15 +49,6 @@ class MLP(nn.Module):
 
 
 """
-DDPG critic, TD3 critic, SAC qf, TAC qf
-"""
-class FlattenMLP(MLP):
-    def forward(self, x, a):
-        q = torch.cat([x,a], dim=-1)
-        return super(FlattenMLP, self).forward(q)
-
-
-"""
 A2C actor
 """
 class CategoricalPolicy(MLP):
@@ -70,6 +61,15 @@ class CategoricalPolicy(MLP):
         log_pi = dist.log_prob(action).sum(dim=-1)
         entropy = dist.entropy()
         return action, log_pi, entropy, pi
+
+
+"""
+DDPG critic, TD3 critic, SAC qf, TAC qf
+"""
+class FlattenMLP(MLP):
+    def forward(self, x, a):
+        q = torch.cat([x,a], dim=-1)
+        return super(FlattenMLP, self).forward(q)
 
 
 """
