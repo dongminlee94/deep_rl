@@ -113,7 +113,7 @@ class Agent(object):
             action = pi.argmax().detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
-            # Create a transition
+            # Create a transition list
             self.transition = []
 
             # Collect experience (s, a, r, s') using some policy
