@@ -67,8 +67,11 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.actor = ReparamGaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
-                                       action_scale=self.act_limit, log_type=self.log_type, q=self.entropic_index).to(device)
+      self.actor = ReparamGaussianPolicy(self.obs_dim, self.act_dim, 
+                                       hidden_sizes=self.hidden_sizes, 
+                                       action_scale=self.act_limit, 
+                                       log_type=self.log_type, 
+                                       q=self.entropic_index).to(device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       # Target network
@@ -87,7 +90,8 @@ class Agent(object):
       # Experience buffer
       self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size)
 
-      # If automatic entropy tuning is True, initialize a target entropy, a log alpha and an alpha optimizer
+      # If automatic entropy tuning is True, 
+      # initialize a target entropy, a log alpha and an alpha optimizer
       if self.automatic_entropy_tuning:
          self.target_entropy = -np.prod((act_dim,)).item()
          self.log_alpha = torch.zeros(1, requires_grad=True, device=device)
@@ -116,7 +120,8 @@ class Agent(object):
 
       # Min Double-Q: min(Q1(s,π(s)), Q2(s,π(s))), min(Q1‾(s',π(s')), Q2‾(s',π(s')))
       min_q_pi = torch.min(self.qf1(obs1, pi), self.qf2(obs1, pi)).squeeze(1).to(device)
-      min_q_next_pi = torch.min(self.qf1_target(obs2, next_pi), self.qf2_target(obs2, next_pi)).squeeze(1).to(device)
+      min_q_next_pi = torch.min(self.qf1_target(obs2, next_pi), 
+                                self.qf2_target(obs2, next_pi)).squeeze(1).to(device)
 
       # Targets for Q and V regression
       v_backup = min_q_next_pi - self.alpha*next_log_pi

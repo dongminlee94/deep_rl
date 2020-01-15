@@ -56,11 +56,15 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.actor = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
-      self.critic = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
+      self.actor = MLP(self.obs_dim, self.act_dim, 
+                     hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
+      self.critic = FlattenMLP(self.obs_dim+self.act_dim, 1, 
+                              hidden_sizes=self.hidden_sizes).to(device)
       # Target network
-      self.actor_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
-      self.critic_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
+      self.actor_target = MLP(self.obs_dim, self.act_dim, 
+                              hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
+      self.critic_target = FlattenMLP(self.obs_dim+self.act_dim, 1, 
+                                    hidden_sizes=self.hidden_sizes).to(device)
       
       # Initialize target parameters to match main parameters
       hard_target_update(self.actor, self.actor_target)

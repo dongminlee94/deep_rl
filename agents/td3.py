@@ -58,11 +58,13 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.actor = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
+      self.actor = MLP(self.obs_dim, self.act_dim, 
+                     hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       # Target network
-      self.actor_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
+      self.actor_target = MLP(self.obs_dim, self.act_dim, 
+                              hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
       self.qf1_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       self.qf2_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       
@@ -113,7 +115,8 @@ class Agent(object):
       pi_target = torch.clamp(pi_target+epsilon, -self.act_limit, self.act_limit).to(device)
 
       # Min Double-Q: min(Q1‾(s',π(s')), Q2‾(s',π(s')))
-      min_q_pi_target = torch.min(self.qf1_target(obs2, pi_target), self.qf2_target(obs2, pi_target)).squeeze(1).to(device)
+      min_q_pi_target = torch.min(self.qf1_target(obs2, pi_target), 
+                                  self.qf2_target(obs2, pi_target)).squeeze(1).to(device)
       
       # Target for Q regression
       q_backup = rews + self.gamma*(1-done)*min_q_pi_target
