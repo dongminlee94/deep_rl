@@ -67,11 +67,10 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.actor = ReparamGaussianPolicy(self.obs_dim, self.act_dim, 
-                                       hidden_sizes=self.hidden_sizes, 
-                                       action_scale=self.act_limit, 
-                                       log_type=self.log_type, 
-                                       q=self.entropic_index).to(device)
+      self.actor = ReparamGaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
+                                                                     action_scale=self.act_limit, 
+                                                                     log_type=self.log_type, 
+                                                                     q=self.entropic_index).to(device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       # Target network

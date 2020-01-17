@@ -58,13 +58,13 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.actor = MLP(self.obs_dim, self.act_dim, 
-                     hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
+      self.actor = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
+                                                   output_activation=torch.tanh).to(device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       # Target network
-      self.actor_target = MLP(self.obs_dim, self.act_dim, 
-                              hidden_sizes=self.hidden_sizes, output_activation=torch.tanh).to(device)
+      self.actor_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
+                                                          output_activation=torch.tanh).to(device)
       self.qf1_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       self.qf2_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
       
