@@ -175,11 +175,10 @@ class ReparamGaussianPolicy(MLP):
         elif self.log_type == 'log-q':
             log_pi = dist.log_prob(pi)
             mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
-            if self.q == 1.:
-                log_q_pi = log_pi.sum(dim=-1)
-            else:
-                exp_log_pi = torch.exp(log_pi)
-                log_q_pi = self.tsallis_entropy_log_q(exp_log_pi, self.q)
+            
+            exp_log_pi = torch.exp(log_pi)
+            log_q_pi = self.tsallis_entropy_log_q(exp_log_pi, self.q)
+            
             # make sure actions are in correct range
             mu = mu * self.action_scale
             pi = pi * self.action_scale
