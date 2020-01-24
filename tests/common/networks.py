@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical, Normal
-from common.utils import identity
+from agents.common.utils import identity
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 """
 DQN, DDQN, A2C critic, VPG critic, TRPO critic, PPO critic, DDPG actor, TD3 actor
@@ -48,15 +49,6 @@ class MLP(nn.Module):
 
 
 """
-DDPG critic, TD3 critic, SAC qf, TAC qf
-"""
-class FlattenMLP(MLP):
-    def forward(self, x, a):
-        q = torch.cat([x,a], dim=-1)
-        return super(FlattenMLP, self).forward(q)
-
-
-"""
 A2C actor
 """
 class CategoricalPolicy(MLP):
@@ -69,6 +61,15 @@ class CategoricalPolicy(MLP):
         log_pi = dist.log_prob(action).sum(dim=-1)
         entropy = dist.entropy()
         return action, log_pi, entropy, pi
+
+
+"""
+DDPG critic, TD3 critic, SAC qf, TAC qf
+"""
+class FlattenMLP(MLP):
+    def forward(self, x, a):
+        q = torch.cat([x,a], dim=-1)
+        return super(FlattenMLP, self).forward(q)
 
 
 """
@@ -110,6 +111,7 @@ class ReparamGaussianPolicy(MLP):
                  output_size, 
                  hidden_sizes=(64,64),
                  activation=F.relu,
+                 action_scale=1.0,
                  log_type='log',
                  q=1.5,
     ):
@@ -126,6 +128,7 @@ class ReparamGaussianPolicy(MLP):
         # Set output layers
         self.mu_layer = nn.Linear(in_size, output_size)
         self.log_std_layer = nn.Linear(in_size, output_size)
+        self.action_scale = action_scale
         self.log_type = log_type
         self.q = 2.0 - q
 
@@ -139,13 +142,16 @@ class ReparamGaussianPolicy(MLP):
         mu = torch.tanh(mu)
         pi = torch.tanh(pi)
         # To avoid evil machine precision error, strictly clip 1-pi**2 to [0,1] range.
-        log_pi -= torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6), dim=-1)
+        if self.log_type == 'log':
+            log_pi -= torch.sum(torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6), dim=-1)
+        elif self.log_type == 'log-q':
+            log_pi -= torch.log(self.clip_but_pass_gradient(1 - pi.pow(2), l=0., u=1.) + 1e-6)
         return mu, pi, log_pi
 
     def tsallis_entropy_log_q(self, x, q):
-        safe_x = torch.max(x, torch.Tensor([1e-6]))
+        safe_x = torch.max(x, torch.Tensor([1e-6]).to(device))
         log_q_x = torch.log(safe_x) if q==1. else (safe_x.pow(1-q)-1)/(1-q)
-        return log_q_x
+        return log_q_x.sum(dim=-1)
         
     def forward(self, x):
         x = super(ReparamGaussianPolicy, self).forward(x)
@@ -158,16 +164,17 @@ class ReparamGaussianPolicy(MLP):
         # https://pytorch.org/docs/stable/distributions.html#normal
         dist = Normal(mu, std)
         pi = dist.rsample() # reparameterization trick (mean + std * N(0,1))
-        log_pi = dist.log_prob(pi).sum(dim=-1)
-        mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
-    
+
         if self.log_type == 'log':
-            return mu, pi, log_pi
+            log_pi = dist.log_prob(pi).sum(dim=-1)
+            mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
         elif self.log_type == 'log-q':
-            if self.q == 1.:
-                log_q_pi = log_pi
-            else:
-                exp_log_pi = torch.exp(log_pi)
-                log_q_pi = self.tsallis_entropy_log_q(exp_log_pi, self.q)
-            return mu, pi, log_q_pi
+            log_pi = dist.log_prob(pi)
+            mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
+            exp_log_pi = torch.exp(log_pi)
+            log_pi = self.tsallis_entropy_log_q(exp_log_pi, self.q)
         
+        # make sure actions are in correct range
+        mu = mu * self.action_scale
+        pi = pi * self.action_scale
+        return mu, pi, log_pi
