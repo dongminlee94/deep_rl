@@ -25,7 +25,10 @@ parser.add_argument('--max_step', type=int, default=500,
                     help='max episode step')
 parser.add_argument('--threshold_return', type=int, default=495,
                     help='solved requirement for success in given environment')
+parser.add_argument('--tensorboard', type=bool, default=True)
+parser.add_argument('--gpu_index', type=int, default=0)
 args = parser.parse_args()
+device = torch.device('cuda', index=args.gpu_index) if torch.cuda.is_available() else torch.device('cpu')
 
 if args.algo == 'dqn':
     from agents.dqn import Agent
@@ -33,6 +36,7 @@ elif args.algo == 'ddqn': # Just replace the target of DQN with Double DQN
     from agents.dqn import Agent
 elif args.algo == 'a2c':
     from agents.a2c import Agent
+
 
 def main():
     """Main."""
@@ -49,11 +53,13 @@ def main():
     torch.manual_seed(args.seed)
 
     # Create an agent
-    agent = Agent(env, args, obs_dim, act_num)
+    agent = Agent(env, args, device, obs_dim, act_num)
 
     # Create a SummaryWriter object by TensorBoard
-    dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) + '_' + time.ctime()
-    writer = SummaryWriter(log_dir=dir_name)
+    if args.tensorboard:
+        dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) \
+                    + '_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
 
@@ -76,8 +82,9 @@ def main():
         train_average_return = train_sum_returns / train_num_episodes if train_num_episodes > 0 else 0.0
 
         # Log experiment result for training episodes
-        writer.add_scalar('Train/AverageReturns', train_average_return, episode)
-        writer.add_scalar('Train/EpisodeReturns', train_episode_return, episode)
+        if args.tensorboard:
+            writer.add_scalar('Train/AverageReturns', train_average_return, episode)
+            writer.add_scalar('Train/EpisodeReturns', train_episode_return, episode)
 
         # Perform the evaluation phase -- no learning
         if episode > 0 and episode % args.eval_per_train == 0:
@@ -93,9 +100,10 @@ def main():
                 eval_sum_returns += eval_episode_return
                 eval_num_episodes += 1
 
-                eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
+            eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
 
-                # Log experiment result for evaluation episodes
+            # Log experiment result for evaluation episodes
+            if args.tensorboard:
                 writer.add_scalar('Eval/AverageReturns', eval_average_return, episode)
                 writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, episode)
 
@@ -109,16 +117,16 @@ def main():
             print('Time:', int(time.time() - start_time))
             print('---------------------------------------')
 
-            # Save a training model
+            # Save the trained model
             if eval_average_return >= args.threshold_return:
                 if not os.path.exists('./tests/save_model'):
                     os.mkdir('./tests/save_model')
                 
                 ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo \
+                                                                                + '_s_' + str(args.seed) \
                                                                                 + '_ep_' + str(train_num_episodes) \
                                                                                 + '_tr_' + str(round(train_average_return, 2)) \
-                                                                                + '_er_' + str(round(eval_average_return, 2)) \
-                                                                                + '_t_' + str(int(time.time() - start_time)) + '.pt')
+                                                                                + '_er_' + str(round(eval_average_return, 2)) + '.pt')
                 
                 if args.algo == 'dqn' or args.algo == 'ddqn':
                     torch.save(agent.qf.state_dict(), ckpt_path)

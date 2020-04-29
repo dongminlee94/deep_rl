@@ -8,7 +8,6 @@ from agents.common.utils import *
 from agents.common.buffer import *
 from agents.common.networks import *
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
    """
@@ -19,6 +18,7 @@ class Agent(object):
    def __init__(self,
                 env,
                 args,
+                device,
                 obs_dim,
                 act_dim,
                 act_limit,
@@ -44,6 +44,7 @@ class Agent(object):
 
       self.env = env
       self.args = args
+      self.device = device
       self.obs_dim = obs_dim
       self.act_dim = act_dim
       self.act_limit = act_limit
@@ -70,12 +71,12 @@ class Agent(object):
       self.actor = ReparamGaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
                                                                      action_scale=self.act_limit, 
                                                                      log_type=self.log_type, 
-                                                                     q=self.entropic_index).to(device)
-      self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
-      self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
+                                                                     q=self.entropic_index).to(self.device)
+      self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
+      self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       # Target network
-      self.qf1_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
-      self.qf2_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
+      self.qf1_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
+      self.qf2_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       
       # Initialize target parameters to match main parameters
       hard_target_update(self.qf1, self.qf1_target)
@@ -87,13 +88,13 @@ class Agent(object):
       self.qf2_optimizer = optim.Adam(self.qf2.parameters(), lr=self.qf_lr)
       
       # Experience buffer
-      self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size)
+      self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size, self.device)
 
       # If automatic entropy tuning is True, 
       # initialize a target entropy, a log alpha and an alpha optimizer
       if self.automatic_entropy_tuning:
          self.target_entropy = -np.prod((act_dim,)).item()
-         self.log_alpha = torch.zeros(1, requires_grad=True, device=device)
+         self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
          self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.alpha_lr)
 
    def train_model(self):
@@ -118,14 +119,14 @@ class Agent(object):
       q2 = self.qf2(obs1, acts).squeeze(1)
 
       # Min Double-Q: min(Q1(s,π(s)), Q2(s,π(s))), min(Q1‾(s',π(s')), Q2‾(s',π(s')))
-      min_q_pi = torch.min(self.qf1(obs1, pi), self.qf2(obs1, pi)).squeeze(1).to(device)
+      min_q_pi = torch.min(self.qf1(obs1, pi), self.qf2(obs1, pi)).squeeze(1).to(self.device)
       min_q_next_pi = torch.min(self.qf1_target(obs2, next_pi), 
-                                self.qf2_target(obs2, next_pi)).squeeze(1).to(device)
+                                self.qf2_target(obs2, next_pi)).squeeze(1).to(self.device)
 
       # Targets for Q and V regression
       v_backup = min_q_next_pi - self.alpha*next_log_pi
       q_backup = rews + self.gamma*(1-done)*v_backup
-      q_backup.to(device)
+      q_backup.to(self.device)
 
       if 0: # Check shape of prediction and target
          print("log_pi", log_pi.shape)
@@ -188,12 +189,12 @@ class Agent(object):
          self.steps += 1
          
          if self.eval_mode:
-            action, _, _ = self.actor(torch.Tensor(obs).to(device))
+            action, _, _ = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             # Collect experience (s, a, r, s') using some policy
-            _, action, _ = self.actor(torch.Tensor(obs).to(device))
+            _, action, _ = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 

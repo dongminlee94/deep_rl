@@ -8,7 +8,6 @@ from agents.common.utils import *
 from agents.common.buffer import *
 from agents.common.networks import *
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
    """
@@ -19,6 +18,7 @@ class Agent(object):
    def __init__(self,
                 env,
                 args,
+                device,
                 obs_dim,
                 act_dim,
                 act_limit,
@@ -40,6 +40,7 @@ class Agent(object):
 
       self.env = env
       self.args = args
+      self.device = device
       self.obs_dim = obs_dim
       self.act_dim = act_dim
       self.act_limit = act_limit
@@ -59,15 +60,15 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.actor = GaussianPolicy(self.obs_dim, self.act_dim).to(device)
-      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(device)
+      self.actor = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
+      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
       # Create optimizers
       self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
       self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
       
       # Experience buffer
-      self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.gamma, self.lam)
+      self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
 
    def train_model(self):
       batch = self.buffer.get()
@@ -128,19 +129,19 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action, _, _, _ = self.actor(torch.Tensor(obs).to(device))
+            action, _, _, _ = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             # Collect experience (s, a, r, s') using some policy
-            _, _, _, action = self.actor(torch.Tensor(obs).to(device))
+            _, _, _, action = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
             self.steps += 1
 
             # Add experience to buffer
-            val = self.critic(torch.Tensor(obs).to(device))
+            val = self.critic(torch.Tensor(obs).to(self.device))
             self.buffer.add(obs, action, reward, done, val)
             
             # Start training when the number of experience is equal to sample size

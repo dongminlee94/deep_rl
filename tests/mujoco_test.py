@@ -17,8 +17,10 @@ parser.add_argument('--render', action="store_true", default=True,
                     help='if you want to render, set this to True')
 parser.add_argument('--test_eps', type=int, default=10000,
                     help='testing episode number')
+parser.add_argument('--gpu_index', type=int, default=0)
 args = parser.parse_args()
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device('cuda', index=args.gpu_index) if torch.cuda.is_available() else torch.device('cpu')
+
 
 def main():
     """Main."""

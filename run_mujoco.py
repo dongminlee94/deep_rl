@@ -21,7 +21,10 @@ parser.add_argument('--steps_per_iter', type=int, default=5000,
                     help='steps of interaction for the agent and the environment in each epoch')
 parser.add_argument('--max_step', type=int, default=1000,
                     help='max episode step')
+parser.add_argument('--tensorboard', type=bool, default=True)
+parser.add_argument('--gpu_index', type=int, default=0)
 args = parser.parse_args()
+device = torch.device('cuda', index=args.gpu_index) if torch.cuda.is_available() else torch.device('cpu')
 
 if args.algo == 'vpg':
     from agents.vpg import Agent
@@ -44,6 +47,7 @@ elif args.algo == 'tac':
 elif args.algo == 'atac': # Automating entropy adjustment on TAC
     from agents.sac import Agent
 
+
 def main():
     """Main."""
     # Initialize environment
@@ -61,29 +65,30 @@ def main():
 
     # Create an agent
     if args.algo == 'ddpg' or args.algo == 'td3':
-        agent = Agent(env, args, obs_dim, act_dim, act_limit, act_noise=0.1, 
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, act_noise=0.1, 
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
-    elif args.algo == 'sac':                                                        # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
-        agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.05,           # shows the best performance in entropy coefficient 
-                    hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)   # while, in Humanoid-v2, SAC with 0.05 shows the best performance.
+    elif args.algo == 'sac':                                                                # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, alpha=0.05,           # shows the best performance in entropy coefficient 
+                    hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)           # while, in Humanoid-v2, SAC with 0.05 shows the best performance.
     elif args.algo == 'asac':
-        agent = Agent(env, args, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True, 
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True, 
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
-    elif args.algo == 'tac':                                                        # In HalfCheetah-v2 and Ant-v2, TAC with 1.5 
-        agent = Agent(env, args, obs_dim, act_dim, act_limit, alpha=0.05,           # shows the best performance in entropic index
-                    log_type='log-q', entropic_index=1.2,                           # while, in Humanoid-v2, TAC with 1.2 shows the best performance.
+    elif args.algo == 'tac':                                                                # In HalfCheetah-v2 and Ant-v2, TAC with 1.5 
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, alpha=0.05,           # shows the best performance in entropic index
+                    log_type='log-q', entropic_index=1.2,                                   # while, in Humanoid-v2, TAC with 1.2 shows the best performance.
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     elif args.algo == 'atac':
-        agent = Agent(env, args, obs_dim, act_dim, act_limit, 
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                     log_type='log-q', entropic_index=1.2, automatic_entropy_tuning=True,
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     else: # vpg, npg, trpo, ppo
-        agent = Agent(env, args, obs_dim, act_dim, act_limit, sample_size=4000)
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=4000)
 
     # Create a SummaryWriter object by TensorBoard
-    dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) \
-                + '_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    writer = SummaryWriter(log_dir=dir_name)
+    if args.tensorboard:
+        dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) \
+                    + '_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
 
@@ -109,10 +114,11 @@ def main():
             train_average_return = train_sum_returns / train_num_episodes if train_num_episodes > 0 else 0.0
 
             # Log experiment result for training steps
-            writer.add_scalar('Train/AverageReturns', train_average_return, total_num_steps)
-            writer.add_scalar('Train/EpisodeReturns', train_episode_return, total_num_steps)
-            if args.algo == 'asac' or args.algo == 'atac':
-                writer.add_scalar('Train/Alpha', agent.alpha, total_num_steps)
+            if args.tensorboard:
+                writer.add_scalar('Train/AverageReturns', train_average_return, total_num_steps)
+                writer.add_scalar('Train/EpisodeReturns', train_episode_return, total_num_steps)
+                if args.algo == 'asac' or args.algo == 'atac':
+                    writer.add_scalar('Train/Alpha', agent.alpha, total_num_steps)
 
         # Perform the evaluation phase -- no learning
         agent.eval_mode = True
@@ -130,8 +136,9 @@ def main():
         eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
 
         # Log experiment result for evaluation steps
-        writer.add_scalar('Eval/AverageReturns', eval_average_return, total_num_steps)
-        writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, total_num_steps)
+        if args.tensorboard:
+            writer.add_scalar('Eval/AverageReturns', eval_average_return, total_num_steps)
+            writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, total_num_steps)
 
         print('---------------------------------------')
         print('Iterations:', i)
@@ -144,17 +151,17 @@ def main():
         print('Time:', int(time.time() - start_time))
         print('---------------------------------------')
 
-        # Save a training model
-        if (i > 0) and (i % 10 == 0):
+        # Save the trained model
+        if (i + 1) % 20 == 0:
             if not os.path.exists('./tests/save_model'):
                 os.mkdir('./tests/save_model')
             
             ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo \
+                                                                            + '_s_' + str(args.seed) \
                                                                             + '_i_' + str(i) \
                                                                             + '_st_' + str(total_num_steps) \
                                                                             + '_tr_' + str(round(train_average_return, 2)) \
-                                                                            + '_er_' + str(round(eval_average_return, 2)) \
-                                                                            + '_t_' + str(int(time.time() - start_time)) + '.pt')
+                                                                            + '_er_' + str(round(eval_average_return, 2)) + '.pt')
             
             torch.save(agent.actor.state_dict(), ckpt_path)
 

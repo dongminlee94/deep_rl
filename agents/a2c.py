@@ -13,6 +13,7 @@ class Agent(object):
    def __init__(self,
                 env,
                 args,
+                device,
                 obs_dim,
                 act_num,
                 steps=0,
@@ -29,6 +30,7 @@ class Agent(object):
 
       self.env = env
       self.args = args
+      self.device = device
       self.obs_dim = obs_dim
       self.act_num = act_num
       self.steps = steps 
@@ -43,9 +45,9 @@ class Agent(object):
       self.logger = logger
 
       # Actor network
-      self.actor = CategoricalPolicy(self.obs_dim, self.act_num, activation=torch.tanh).to(device)
+      self.actor = CategoricalPolicy(self.obs_dim, self.act_num, activation=torch.tanh).to(self.device)
       # Critic network
-      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(device)
+      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
       # Create optimizers
       self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
@@ -63,11 +65,11 @@ class Agent(object):
       log_pi, entropy, v, next_obs, reward, done = self.transition
 
       # Prediction V(s')
-      next_v = self.critic(torch.Tensor(next_obs).to(device))
+      next_v = self.critic(torch.Tensor(next_obs).to(self.device))
       
       # Target for Q regression
       q = reward + self.gamma*(1-done)*next_v
-      q.to(device)
+      q.to(self.device)
 
       # Advantage = Q - V
       advant = q - v
@@ -109,7 +111,7 @@ class Agent(object):
          self.steps += 1
          
          if self.eval_mode:
-            _, _, _, pi = self.actor(torch.Tensor(obs).to(device))
+            _, _, _, pi = self.actor(torch.Tensor(obs).to(self.device))
             action = pi.argmax().detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
@@ -117,7 +119,7 @@ class Agent(object):
             self.transition = []
 
             # Collect experience (s, a, r, s') using some policy
-            action = self.select_action(torch.Tensor(obs).to(device))
+            action = self.select_action(torch.Tensor(obs).to(self.device))
             next_obs, reward, done, _ = self.env.step(action)
 
             self.transition.extend([next_obs, reward, done])

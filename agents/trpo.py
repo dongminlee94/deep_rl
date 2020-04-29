@@ -19,6 +19,7 @@ class Agent(object):
    def __init__(self,
                 env,
                 args,
+                device,
                 obs_dim,
                 act_dim,
                 act_limit,
@@ -45,6 +46,7 @@ class Agent(object):
 
       self.env = env
       self.args = args
+      self.device = device
       self.obs_dim = obs_dim
       self.act_dim = act_dim
       self.act_limit = act_limit
@@ -69,27 +71,27 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.actor = GaussianPolicy(self.obs_dim, self.act_dim).to(device)
-      self.old_actor = GaussianPolicy(self.obs_dim, self.act_dim).to(device)
-      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(device)
+      self.actor = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
+      self.old_actor = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
+      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
       # Create optimizers
       self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
       
       # Experience buffer
-      self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.gamma, self.lam)
+      self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
 
    def cg(self, obs, b, cg_iters=10, EPS=1e-8, residual_tol=1e-10):
       # Conjugate gradient algorithm
       # (https://en.wikipedia.org/wiki/Conjugate_gradient_method)
-      x = torch.zeros(b.size()).to(device)
+      x = torch.zeros(b.size()).to(self.device)
       r = b.clone()
       p = r.clone()
-      rdotr = torch.dot(r,r).to(device)
+      rdotr = torch.dot(r,r).to(self.device)
 
       for _ in range(cg_iters):
          Ap = self.hessian_vector_product(obs, p)
-         alpha = rdotr / (torch.dot(p, Ap).to(device) + EPS)
+         alpha = rdotr / (torch.dot(p, Ap).to(self.device) + EPS)
          
          x += alpha * p
          r -= alpha * Ap
@@ -262,19 +264,19 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action, _, _, _ = self.actor(torch.Tensor(obs).to(device))
+            action, _, _, _ = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             # Collect experience (s, a, r, s') using some policy
-            _, _, _, action = self.actor(torch.Tensor(obs).to(device))
+            _, _, _, action = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
             
             self.steps += 1
 
             # Add experience to buffer
-            val = self.critic(torch.Tensor(obs).to(device))
+            val = self.critic(torch.Tensor(obs).to(self.device))
             self.buffer.add(obs, action, reward, done, val)
             
             # Start training when the number of experience is equal to sample size

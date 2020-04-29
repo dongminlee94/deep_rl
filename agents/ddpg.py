@@ -8,7 +8,6 @@ from agents.common.utils import *
 from agents.common.buffer import *
 from agents.common.networks import *
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
    """An implementation of the Deep Deterministic Policy Gradient (DDPG) agent."""
@@ -16,6 +15,7 @@ class Agent(object):
    def __init__(self,
                 env,
                 args,
+                device,
                 obs_dim,
                 act_dim,
                 act_limit,
@@ -37,6 +37,7 @@ class Agent(object):
 
       self.env = env
       self.args = args
+      self.device = device
       self.obs_dim = obs_dim
       self.act_dim = act_dim
       self.act_limit = act_limit
@@ -57,12 +58,12 @@ class Agent(object):
 
       # Main network
       self.actor = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
-                                                   output_activation=torch.tanh).to(device)
-      self.critic = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
+                                                   output_activation=torch.tanh).to(self.device)
+      self.critic = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       # Target network
       self.actor_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
-                                                          output_activation=torch.tanh).to(device)
-      self.critic_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(device)
+                                                          output_activation=torch.tanh).to(self.device)
+      self.critic_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       
       # Initialize target parameters to match main parameters
       hard_target_update(self.actor, self.actor_target)
@@ -73,7 +74,7 @@ class Agent(object):
       self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
       
       # Experience buffer
-      self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size)
+      self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size, self.device)
 
    def select_action(self, obs):
       action = self.actor(obs).detach().cpu().numpy()
@@ -106,7 +107,7 @@ class Agent(object):
       
       # Target for Q regression
       q_backup = rews + self.gamma*(1-done)*q_pi_target
-      q_backup.to(device)
+      q_backup.to(self.device)
 
       if 0: # Check shape of prediction and target
          print("q", q.shape)
@@ -148,12 +149,12 @@ class Agent(object):
          self.steps += 1
          
          if self.eval_mode:
-            action = self.actor(torch.Tensor(obs).to(device))
+            action = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             # Collect experience (s, a, r, s') using some policy
-            action = self.select_action(torch.Tensor(obs).to(device))
+            action = self.select_action(torch.Tensor(obs).to(self.device))
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to replay buffer

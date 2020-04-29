@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from torch.distributions import Categorical, Normal
 from agents.common.utils import identity
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 """
 DQN, DDQN, A2C critic, VPG critic, TRPO critic, PPO critic, DDPG actor, TD3 actor
@@ -149,7 +148,7 @@ class ReparamGaussianPolicy(MLP):
         return mu, pi, log_pi
 
     def tsallis_entropy_log_q(self, x, q):
-        safe_x = torch.max(x, torch.Tensor([1e-6]).to(device))
+        safe_x = torch.max(x, torch.Tensor([1e-6]))
         log_q_x = torch.log(safe_x) if q==1. else (safe_x.pow(1-q)-1)/(1-q)
         return log_q_x.sum(dim=-1)
         

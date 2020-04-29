@@ -15,6 +15,7 @@ class Agent(object):
    def __init__(self,
                 env,
                 args,
+                device,
                 obs_dim,
                 act_num,
                 steps=0,
@@ -31,6 +32,7 @@ class Agent(object):
 
       self.env = env
       self.args = args
+      self.device = device
       self.obs_dim = obs_dim
       self.act_num = act_num
       self.steps = steps
@@ -45,9 +47,9 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.qf = MLP(self.obs_dim, self.act_num).to(device)
+      self.qf = MLP(self.obs_dim, self.act_num).to(self.device)
       # Target network
-      self.qf_target = MLP(self.obs_dim, self.act_num).to(device)
+      self.qf_target = MLP(self.obs_dim, self.act_num).to(self.device)
       
       # Initialize target parameters to match main parameters
       hard_target_update(self.qf, self.qf_target)
@@ -56,7 +58,7 @@ class Agent(object):
       self.qf_optimizer = optim.Adam(self.qf.parameters(), lr=1e-3)
 
       # Experience buffer
-      self.replay_buffer = ReplayBuffer(self.obs_dim, 1, self.buffer_size)
+      self.replay_buffer = ReplayBuffer(self.obs_dim, 1, self.buffer_size, self.device)
 
    def select_action(self, obs):
       """Select an action from the set of available actions."""
@@ -98,7 +100,7 @@ class Agent(object):
          q_target = self.qf_target(obs2)
          q_target = q_target.gather(1, q2.max(1)[1].unsqueeze(1))
       q_backup = rews + self.gamma*(1-done)*q_target.max(1)[0]
-      q_backup.to(device)
+      q_backup.to(self.device)
 
       if 0: # Check shape of prediction and target
          print("q", q.shape)
@@ -129,12 +131,12 @@ class Agent(object):
          self.steps += 1
          
          if self.eval_mode:
-            q_value = self.qf(torch.Tensor(obs).to(device)).argmax()
+            q_value = self.qf(torch.Tensor(obs).to(self.device)).argmax()
             action = q_value.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             # Collect experience (s, a, r, s') using some policy
-            action = self.select_action(torch.Tensor(obs).to(device))
+            action = self.select_action(torch.Tensor(obs).to(self.device))
             next_obs, reward, done, _ = self.env.step(action)
          
             # Add experience to replay buffer
