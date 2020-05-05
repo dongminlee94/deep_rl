@@ -123,15 +123,15 @@ class ReparamGaussianPolicy(MLP):
             use_output_layer=False,
         )
 
-        self.device = device
         in_size = hidden_sizes[-1]
-
-        # Set output layers
-        self.mu_layer = nn.Linear(in_size, output_size)
-        self.log_std_layer = nn.Linear(in_size, output_size)
         self.action_scale = action_scale
         self.log_type = log_type
         self.q = 2.0 - q
+        self.device = device
+
+        # Set output layers
+        self.mu_layer = nn.Linear(in_size, output_size)
+        self.log_std_layer = nn.Linear(in_size, output_size)        
 
     def clip_but_pass_gradient(self, x, l=-1., u=1.):
         clip_up = (x > u).float()
