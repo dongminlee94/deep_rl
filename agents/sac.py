@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from agents.common.utils import *
-from agents.common.buffer import *
+from agents.common.buffers import *
 from agents.common.networks import *
 
 
