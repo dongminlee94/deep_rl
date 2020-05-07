@@ -15,7 +15,7 @@ parser.add_argument('--algo', type=str, default='dqn',
                     help='select an algorithm among dqn, ddqn, a2c')
 parser.add_argument('--seed', type=int, default=0, 
                     help='seed for random number generators')
-parser.add_argument('--training_eps', type=int, default=500, 
+parser.add_argument('--training_eps', type=int, default=600, 
                     help='training episode number')
 parser.add_argument('--eval_per_train', type=int, default=50, 
                     help='evaluation number per training')
