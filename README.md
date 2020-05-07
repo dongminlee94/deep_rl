@@ -63,7 +63,7 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 ## Requirements
 
-- [PyTorch](https://pytorch.org/get-started/locally/)
+- [PyTorch 1.2.0](https://pytorch.org/get-started/previous-versions/)
 - [TensorBoard](https://pytorch.org/docs/stable/tensorboard.html)
 - [gym](https://github.com/openai/gym)
 - [mujoco-py](https://github.com/openai/mujoco-py)
