@@ -23,6 +23,7 @@ class Agent(object):
                 act_dim,
                 act_limit,
                 steps=0,
+                start_steps=10000,
                 gamma=0.99,
                 alpha=0.2,
                 log_type='log',
@@ -49,6 +50,7 @@ class Agent(object):
       self.act_dim = act_dim
       self.act_limit = act_limit
       self.steps = steps 
+      self.start_steps = start_steps
       self.gamma = gamma
       self.alpha = alpha
       self.log_type = log_type
@@ -195,8 +197,11 @@ class Agent(object):
             next_obs, reward, done, _ = self.env.step(action)
          else:
             # Collect experience (s, a, r, s') using some policy
-            _, action, _ = self.actor(torch.Tensor(obs).to(self.device))
-            action = action.detach().cpu().numpy()
+            if self.steps > self.start_steps:
+               _, action, _ = self.actor(torch.Tensor(obs).to(self.device))
+               action = action.detach().cpu().numpy()
+            else:
+               action = self.env.action_space.sample()
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to replay buffer
