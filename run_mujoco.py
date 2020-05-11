@@ -9,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch in MuJoCo environments')
-parser.add_argument('--env', type=str, default='HalfCheetah-v2', 
+parser.add_argument('--env', type=str, default='Humanoid-v2', 
                     help='choose an environment between HalfCheetah-v2, Ant-v2 and Humanoid-v2')
 parser.add_argument('--algo', type=str, default='atac', 
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
@@ -68,18 +68,18 @@ def main():
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, act_noise=0.1, 
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     elif args.algo == 'sac':                                                                # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
-        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, alpha=0.2,           # shows the best performance in entropy coefficient 
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, alpha=0.05,           # shows the best performance in entropy coefficient 
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)           # while, in Humanoid-v2, SAC with 0.05 shows the best performance.
     elif args.algo == 'asac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True, 
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     elif args.algo == 'tac':                                                                # In HalfCheetah-v2 and Ant-v2, TAC with 1.5 
-        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, alpha=0.2,           # shows the best performance in entropic index
-                    log_type='log-q', entropic_index=1.5,                                   # while, in Humanoid-v2, TAC with 1.2 shows the best performance.
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, alpha=0.05,           # shows the best performance in entropic index
+                    log_type='log-q', entropic_index=1.2,                                   # while, in Humanoid-v2, TAC with 1.2 shows the best performance.
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     elif args.algo == 'atac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
-                    log_type='log-q', entropic_index=1.5, automatic_entropy_tuning=True,
+                    log_type='log-q', entropic_index=1.2, automatic_entropy_tuning=True,
                     hidden_sizes=(300,300), buffer_size=int(1e6), batch_size=100)
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=4000)
