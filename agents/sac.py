@@ -202,6 +202,7 @@ class Agent(object):
                action = action.detach().cpu().numpy()
             else:
                action = self.env.action_space.sample()
+               print('steps', self.steps)
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to replay buffer
