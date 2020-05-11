@@ -189,13 +189,13 @@ class Agent(object):
 
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
-         self.steps += 1
-         
          if self.eval_mode:
             action, _, _ = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
+            self.steps += 1
+            
             # Collect experience (s, a, r, s') using some policy
             if self.steps > self.start_steps:
                _, action, _ = self.actor(torch.Tensor(obs).to(self.device))
