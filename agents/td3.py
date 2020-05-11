@@ -32,7 +32,7 @@ class Agent(object):
                 policy_lr=1e-4,
                 qf_lr=1e-3,
                 eval_mode=False,
-                actor_losses=list(),
+                policy_losses=list(),
                 qf_losses=list(),
                 logger=dict(),
    ):
@@ -56,37 +56,37 @@ class Agent(object):
       self.policy_lr = policy_lr
       self.qf_lr = qf_lr
       self.eval_mode = eval_mode
-      self.actor_losses = actor_losses
+      self.policy_losses = policy_losses
       self.qf_losses = qf_losses
       self.logger = logger
 
       # Main network
-      self.actor = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
+      self.policy = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
                                                    output_activation=torch.tanh).to(self.device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       # Target network
-      self.actor_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
+      self.policy_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
                                                           output_activation=torch.tanh).to(self.device)
       self.qf1_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       self.qf2_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       
       # Initialize target parameters to match main parameters
-      hard_target_update(self.actor, self.actor_target)
+      hard_target_update(self.policy, self.policy_target)
       hard_target_update(self.qf1, self.qf1_target)
       hard_target_update(self.qf2, self.qf2_target)
 
       # Concat the critic parameters to use one optim
       self.qf_parameters = list(self.qf1.parameters()) + list(self.qf2.parameters())
       # Create optimizers
-      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.policy_lr)
+      self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
       self.qf_optimizer = optim.Adam(self.qf_parameters, lr=self.qf_lr)
       
       # Experience buffer
       self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size, self.device)
 
    def select_action(self, obs):
-      action = self.actor(obs).detach().cpu().numpy()
+      action = self.policy(obs).detach().cpu().numpy()
       action += self.act_noise * np.random.randn(self.act_dim)
       return np.clip(action, -self.act_limit, self.act_limit)
 
@@ -106,13 +106,13 @@ class Agent(object):
          print("done", done.shape)
 
       # Prediction Q1(s,π(s)), Q1(s,a), Q2(s,a)
-      pi = self.actor(obs1)
+      pi = self.policy(obs1)
       q1_pi = self.qf1(obs1, pi)
       q1 = self.qf1(obs1, acts).squeeze(1)
       q2 = self.qf2(obs1, acts).squeeze(1)
 
       # Target policy smoothing, by adding clipped noise to target actions
-      pi_target = self.actor_target(obs2)
+      pi_target = self.policy_target(obs2)
       epsilon = torch.normal(mean=0, std=self.target_noise, size=pi_target.size()).to(self.device)
       epsilon = torch.clamp(epsilon, -self.noise_clip, self.noise_clip).to(self.device)
       pi_target = torch.clamp(pi_target+epsilon, -self.act_limit, self.act_limit).to(self.device)
@@ -134,7 +134,7 @@ class Agent(object):
          print("q_backup", q_backup.shape)
 
       # TD3 losses
-      actor_loss = -q1_pi.mean()
+      policy_loss = -q1_pi.mean()
       qf1_loss = F.mse_loss(q1, q_backup.detach())
       qf2_loss = F.mse_loss(q2, q_backup.detach())
       qf_loss = qf1_loss + qf2_loss
@@ -146,18 +146,18 @@ class Agent(object):
       
       # Delayed policy update
       if self.steps % self.policy_delay == 0:
-         # Update actor network parameter
-         self.actor_optimizer.zero_grad()
-         actor_loss.backward()
-         self.actor_optimizer.step()
+         # Update policy network parameter
+         self.policy_optimizer.zero_grad()
+         policy_loss.backward()
+         self.policy_optimizer.step()
 
          # Polyak averaging for target parameter
-         soft_target_update(self.actor, self.actor_target)
+         soft_target_update(self.policy, self.policy_target)
          soft_target_update(self.qf1, self.qf1_target)
          soft_target_update(self.qf2, self.qf2_target)
          
       # Save losses
-      self.actor_losses.append(actor_loss.item())
+      self.policy_losses.append(policy_loss.item())
       self.qf_losses.append(qf_loss.item())
 
    def run(self, max_step):
@@ -170,7 +170,7 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action = self.actor(torch.Tensor(obs).to(self.device))
+            action = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
@@ -199,6 +199,6 @@ class Agent(object):
          obs = next_obs
       
       # Save logs
-      self.logger['LossPi'] = round(np.mean(self.actor_losses), 5)
+      self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossQ'] = round(np.mean(self.qf_losses), 5)
       return step_number, total_reward

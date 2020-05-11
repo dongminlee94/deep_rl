@@ -35,7 +35,7 @@ class Agent(object):
                 policy_lr=3e-4,
                 qf_lr=3e-4,
                 eval_mode=False,
-                actor_losses=list(),
+                policy_losses=list(),
                 qf1_losses=list(),
                 qf2_losses=list(),
                 alpha_losses=list(),
@@ -61,14 +61,14 @@ class Agent(object):
       self.policy_lr = policy_lr
       self.qf_lr = qf_lr
       self.eval_mode = eval_mode
-      self.actor_losses = actor_losses
+      self.policy_losses = policy_losses
       self.qf1_losses = qf1_losses
       self.qf2_losses = qf2_losses
       self.alpha_losses = alpha_losses
       self.logger = logger
 
       # Main network
-      self.actor = ReparamGaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
+      self.policy = ReparamGaussianPolicy(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
                                                                      action_scale=self.act_limit, 
                                                                      log_type=self.log_type, 
                                                                      q=self.entropic_index,
@@ -84,7 +84,7 @@ class Agent(object):
       hard_target_update(self.qf2, self.qf2_target)
 
       # Create optimizers
-      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.policy_lr)
+      self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
       self.qf1_optimizer = optim.Adam(self.qf1.parameters(), lr=self.qf_lr)
       self.qf2_optimizer = optim.Adam(self.qf2.parameters(), lr=self.qf_lr)
       
@@ -114,8 +114,8 @@ class Agent(object):
          print("done", done.shape)
 
       # Prediction π(s), logπ(s), π(s'), logπ(s'), Q1(s,a), Q2(s,a)
-      _, pi, log_pi = self.actor(obs1)
-      _, next_pi, next_log_pi = self.actor(obs2)
+      _, pi, log_pi = self.policy(obs1)
+      _, next_pi, next_log_pi = self.policy(obs2)
       q1 = self.qf1(obs1, acts).squeeze(1)
       q2 = self.qf2(obs1, acts).squeeze(1)
 
@@ -139,7 +139,7 @@ class Agent(object):
          print("q_backup", q_backup.shape)
 
       # Soft actor-critic losses
-      actor_loss = (self.alpha*log_pi - min_q_pi).mean()
+      policy_loss = (self.alpha*log_pi - min_q_pi).mean()
       qf1_loss = F.mse_loss(q1, q_backup.detach())
       qf2_loss = F.mse_loss(q2, q_backup.detach())
 
@@ -152,10 +152,10 @@ class Agent(object):
       qf2_loss.backward()
       self.qf2_optimizer.step()
       
-      # Update actor network parameter
-      self.actor_optimizer.zero_grad()
-      actor_loss.backward()
-      self.actor_optimizer.step()
+      # Update policy network parameter
+      self.policy_optimizer.zero_grad()
+      policy_loss.backward()
+      self.policy_optimizer.step()
 
       # If automatic entropy tuning is True, update alpha
       if self.automatic_entropy_tuning:
@@ -174,7 +174,7 @@ class Agent(object):
       soft_target_update(self.qf2, self.qf2_target)
       
       # Save losses
-      self.actor_losses.append(actor_loss.item())
+      self.policy_losses.append(policy_loss.item())
       self.qf1_losses.append(qf1_loss.item())
       self.qf2_losses.append(qf2_loss.item())
 
@@ -188,7 +188,7 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action, _, _ = self.actor(torch.Tensor(obs).to(self.device))
+            action, _, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
@@ -198,7 +198,7 @@ class Agent(object):
             # from a uniform distribution for better exploration. 
             # Afterwards, use the learned policy.
             if self.steps > self.start_steps:
-               _, action, _ = self.actor(torch.Tensor(obs).to(self.device))
+               _, action, _ = self.policy(torch.Tensor(obs).to(self.device))
                action = action.detach().cpu().numpy()
             else:
                action = self.env.action_space.sample()
@@ -218,7 +218,7 @@ class Agent(object):
          obs = next_obs
       
       # Save logs
-      self.logger['LossPi'] = round(np.mean(self.actor_losses), 5)
+      self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossQ1'] = round(np.mean(self.qf1_losses), 5)
       self.logger['LossQ2'] = round(np.mean(self.qf2_losses), 5)
       if self.automatic_entropy_tuning:
