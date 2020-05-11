@@ -142,15 +142,14 @@ class Agent(object):
       actor_loss = (self.alpha*log_pi - min_q_pi).mean()
       qf1_loss = F.mse_loss(q1, q_backup.detach())
       qf2_loss = F.mse_loss(q2, q_backup.detach())
-      qf_loss = qf1_loss + qf2_loss
 
       # Update two Q network parameter
       self.qf1_optimizer.zero_grad()
-      qf_loss.backward()
+      qf1_loss.backward()
       self.qf1_optimizer.step()
 
       self.qf2_optimizer.zero_grad()
-      qf_loss.backward()
+      qf2_loss.backward()
       self.qf2_optimizer.step()
       
       # Update actor network parameter
