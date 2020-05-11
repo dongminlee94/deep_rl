@@ -195,14 +195,13 @@ class Agent(object):
             next_obs, reward, done, _ = self.env.step(action)
          else:
             self.steps += 1
-            
+
             # Collect experience (s, a, r, s') using some policy
             if self.steps > self.start_steps:
                _, action, _ = self.actor(torch.Tensor(obs).to(self.device))
                action = action.detach().cpu().numpy()
             else:
                action = self.env.action_space.sample()
-               print('steps', self.steps)
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to replay buffer
