@@ -20,12 +20,13 @@ class Agent(object):
                 act_dim,
                 act_limit,
                 steps=0,
+                start_steps=2000,
                 gamma=0.99,
                 lam=0.97,
                 hidden_sizes=(64,64),
                 sample_size=2000,
                 mini_batch_size=64,
-                actor_lr=1e-3,
+                actor_lr=3e-4,
                 critic_lr=1e-3,
                 clip_param=0.2,
                 epoch=10,
@@ -44,6 +45,7 @@ class Agent(object):
       self.act_dim = act_dim
       self.act_limit = act_limit
       self.steps = steps 
+      self.start_steps = start_steps
       self.gamma = gamma
       self.lam = lam
       self.hidden_sizes = hidden_sizes
@@ -165,12 +167,12 @@ class Agent(object):
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
+            self.steps += 1
+            
             # Collect experience (s, a, r, s') using some policy
             _, _, _, action = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
-            
-            self.steps += 1
 
             # Add experience to buffer
             val = self.critic(torch.Tensor(obs).to(self.device))

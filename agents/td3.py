@@ -20,6 +20,7 @@ class Agent(object):
                 act_dim,
                 act_limit,
                 steps=0,
+                start_steps=2000,
                 gamma=0.99,
                 act_noise=0.1,
                 target_noise=0.2,
@@ -28,7 +29,7 @@ class Agent(object):
                 hidden_sizes=(128,128),
                 buffer_size=int(1e4),
                 batch_size=64,
-                actor_lr=1e-3,
+                policy_lr=1e-4,
                 qf_lr=1e-3,
                 eval_mode=False,
                 actor_losses=list(),
@@ -43,6 +44,7 @@ class Agent(object):
       self.act_dim = act_dim
       self.act_limit = act_limit
       self.steps = steps 
+      self.start_steps = start_steps
       self.gamma = gamma
       self.act_noise = act_noise
       self.target_noise = target_noise
@@ -51,7 +53,7 @@ class Agent(object):
       self.hidden_sizes = hidden_sizes
       self.buffer_size = buffer_size
       self.batch_size = batch_size
-      self.actor_lr = actor_lr
+      self.policy_lr = policy_lr
       self.qf_lr = qf_lr
       self.eval_mode = eval_mode
       self.actor_losses = actor_losses
@@ -77,7 +79,7 @@ class Agent(object):
       # Concat the critic parameters to use one optim
       self.qf_parameters = list(self.qf1.parameters()) + list(self.qf2.parameters())
       # Create optimizers
-      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
+      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.policy_lr)
       self.qf_optimizer = optim.Adam(self.qf_parameters, lr=self.qf_lr)
       
       # Experience buffer
@@ -167,15 +169,22 @@ class Agent(object):
 
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
-         self.steps += 1
-         
          if self.eval_mode:
             action = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
+            self.steps += 1
+            
+            # Until start_steps have elapsed, randomly sample actions 
+            # from a uniform distribution for better exploration. 
+            # Afterwards, use the learned policy.
+            if self.steps > self.start_steps:
+               action = self.select_action(torch.Tensor(obs).to(self.device))
+            else:
+               action = self.env.action_space.sample()
+            
             # Collect experience (s, a, r, s') using some policy
-            action = self.select_action(torch.Tensor(obs).to(self.device))
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to replay buffer

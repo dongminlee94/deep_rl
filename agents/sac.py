@@ -23,7 +23,7 @@ class Agent(object):
                 act_dim,
                 act_limit,
                 steps=0,
-                start_steps=10000,
+                start_steps=2000,
                 gamma=0.99,
                 alpha=0.2,
                 log_type='log',
@@ -32,9 +32,8 @@ class Agent(object):
                 hidden_sizes=(128,128),
                 buffer_size=int(1e4),
                 batch_size=64,
-                actor_lr=3e-4,
+                policy_lr=3e-4,
                 qf_lr=3e-4,
-                alpha_lr=3e-4,
                 eval_mode=False,
                 actor_losses=list(),
                 qf1_losses=list(),
@@ -59,9 +58,8 @@ class Agent(object):
       self.hidden_sizes = hidden_sizes
       self.buffer_size = buffer_size
       self.batch_size = batch_size
-      self.actor_lr = actor_lr
+      self.policy_lr = policy_lr
       self.qf_lr = qf_lr
-      self.alpha_lr = alpha_lr
       self.eval_mode = eval_mode
       self.actor_losses = actor_losses
       self.qf1_losses = qf1_losses
@@ -86,7 +84,7 @@ class Agent(object):
       hard_target_update(self.qf2, self.qf2_target)
 
       # Create optimizers
-      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
+      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.policy_lr)
       self.qf1_optimizer = optim.Adam(self.qf1.parameters(), lr=self.qf_lr)
       self.qf2_optimizer = optim.Adam(self.qf2.parameters(), lr=self.qf_lr)
       
@@ -98,7 +96,7 @@ class Agent(object):
       if self.automatic_entropy_tuning:
          self.target_entropy = -np.prod((act_dim,)).item()
          self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
-         self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.alpha_lr)
+         self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.policy_lr)
 
    def train_model(self):
       batch = self.replay_buffer.sample(self.batch_size)
@@ -196,12 +194,16 @@ class Agent(object):
          else:
             self.steps += 1
 
-            # Collect experience (s, a, r, s') using some policy
+            # Until start_steps have elapsed, randomly sample actions 
+            # from a uniform distribution for better exploration. 
+            # Afterwards, use the learned policy.
             if self.steps > self.start_steps:
                _, action, _ = self.actor(torch.Tensor(obs).to(self.device))
                action = action.detach().cpu().numpy()
             else:
                action = self.env.action_space.sample()
+
+            # Collect experience (s, a, r, s') using some policy
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to replay buffer

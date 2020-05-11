@@ -268,12 +268,12 @@ class Agent(object):
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
+            self.steps += 1
+            
             # Collect experience (s, a, r, s') using some policy
             _, _, _, action = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
-            
-            self.steps += 1
 
             # Add experience to buffer
             val = self.critic(torch.Tensor(obs).to(self.device))

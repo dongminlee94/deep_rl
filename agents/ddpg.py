@@ -20,12 +20,13 @@ class Agent(object):
                 act_dim,
                 act_limit,
                 steps=0,
+                start_steps=2000,
                 gamma=0.99,
                 act_noise=0.1,
                 hidden_sizes=(128,128),
                 buffer_size=int(1e4),
                 batch_size=64,
-                actor_lr=1e-3,
+                actor_lr=1e-4,
                 critic_lr=1e-3,
                 gradient_clip_ac=0.5,
                 gradient_clip_cr=1.0,
@@ -42,6 +43,7 @@ class Agent(object):
       self.act_dim = act_dim
       self.act_limit = act_limit
       self.steps = steps 
+      self.start_steps = start_steps
       self.gamma = gamma
       self.act_noise = act_noise
       self.hidden_sizes = hidden_sizes
@@ -146,15 +148,22 @@ class Agent(object):
 
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
-         self.steps += 1
-         
          if self.eval_mode:
             action = self.actor(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
+            self.steps += 1
+
+            # Until start_steps have elapsed, randomly sample actions 
+            # from a uniform distribution for better exploration. 
+            # Afterwards, use the learned policy.
+            if self.steps > self.start_steps:
+               action = self.select_action(torch.Tensor(obs).to(self.device))
+            else:
+               action = self.env.action_space.sample()
+
             # Collect experience (s, a, r, s') using some policy
-            action = self.select_action(torch.Tensor(obs).to(self.device))
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to replay buffer
