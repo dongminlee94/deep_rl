@@ -79,7 +79,7 @@ def main():
                       alpha=0.05,                       # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
                       hidden_sizes=(256,256),           # shows the best performance in entropy coefficient 
                       buffer_size=int(1e6),             # while, in Humanoid-v2, SAC with 0.05 shows the best performance.
-                      batch_size=256
+                      batch_size=256,
                       policy_lr=3e-4, 
                       qf_lr=3e-4)     
     elif args.algo == 'asac':
