@@ -110,7 +110,7 @@ def main():
                       automatic_entropy_tuning=True,
                       hidden_sizes=(256,256), 
                       buffer_size=int(1e6), 
-                      batch_size=256
+                      batch_size=256,
                       policy_lr=3e-4,
                       qf_lr=3e-4)
     else: # vpg, npg, trpo, ppo
