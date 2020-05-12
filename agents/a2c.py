@@ -18,11 +18,11 @@ class Agent(object):
                 steps=0,
                 gamma=0.99,
                 ent_coef=1e-3,
-                actor_lr=1e-3,
-                critic_lr=1e-3,
+                policy_lr=1e-3,
+                vf_lr=1e-3,
                 eval_mode=False,
-                actor_losses=list(),
-                critic_losses=list(),
+                policy_losses=list(),
+                vf_losses=list(),
                 entropies=list(),
                 logger=dict(),
    ):
@@ -35,28 +35,28 @@ class Agent(object):
       self.steps = steps 
       self.gamma = gamma
       self.ent_coef = ent_coef
-      self.actor_lr = actor_lr
-      self.critic_lr = critic_lr
+      self.policy_lr = policy_lr
+      self.vf_lr = vf_lr
       self.eval_mode = eval_mode
-      self.actor_losses = actor_losses
-      self.critic_losses = critic_losses
+      self.policy_losses = policy_losses
+      self.vf_losses = vf_losses
       self.entropies = entropies
       self.logger = logger
 
-      # Actor network
-      self.actor = CategoricalPolicy(self.obs_dim, self.act_num, activation=torch.tanh).to(self.device)
-      # Critic network
-      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
+      # Policy network
+      self.policy = CategoricalPolicy(self.obs_dim, self.act_num, activation=torch.tanh).to(self.device)
+      # Value network
+      self.vf = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
       # Create optimizers
-      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
-      self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
+      self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
+      self.vf_optimizer = optim.Adam(self.vf.parameters(), lr=self.vf_lr)
       
    def select_action(self, obs):
       """Select an action from the set of available actions."""
-      action, log_pi, entropy, _  = self.actor(obs)
+      action, log_pi, entropy, _  = self.policy(obs)
       # Prediction V(s)
-      v = self.critic(obs)
+      v = self.vf(obs)
       self.transition.extend([log_pi, entropy, v])
       return action.detach().cpu().numpy()
 
@@ -64,7 +64,7 @@ class Agent(object):
       log_pi, entropy, v, next_obs, reward, done = self.transition
 
       # Prediction V(s')
-      next_v = self.critic(torch.Tensor(next_obs).to(self.device))
+      next_v = self.vf(torch.Tensor(next_obs).to(self.device))
       
       # Target for Q regression
       q = reward + self.gamma*(1-done)*next_v
@@ -80,22 +80,22 @@ class Agent(object):
          print("q", q.shape)
 
       # A2C losses
-      actor_loss = -log_pi*advant.detach() + self.ent_coef*entropy
-      critic_loss = F.mse_loss(v, q.detach())
+      policy_loss = -log_pi*advant.detach() + self.ent_coef*entropy
+      vf_loss = F.mse_loss(v, q.detach())
 
-      # Update critic network parameter
-      self.critic_optimizer.zero_grad()
-      critic_loss.backward()
-      self.critic_optimizer.step()
+      # Update value network parameter
+      self.vf_optimizer.zero_grad()
+      vf_loss.backward()
+      self.vf_optimizer.step()
       
-      # Update actor network parameter
-      self.actor_optimizer.zero_grad()
-      actor_loss.backward()
-      self.actor_optimizer.step()
+      # Update policy network parameter
+      self.policy_optimizer.zero_grad()
+      policy_loss.backward()
+      self.policy_optimizer.step()
 
       # Save losses & entropies
-      self.actor_losses.append(actor_loss.item())
-      self.critic_losses.append(critic_loss.item())
+      self.policy_losses.append(policy_loss.item())
+      self.vf_losses.append(vf_loss.item())
       self.entropies.append(entropy.item())
 
    def run(self, max_step):
@@ -110,7 +110,7 @@ class Agent(object):
          self.steps += 1
          
          if self.eval_mode:
-            _, _, _, pi = self.actor(torch.Tensor(obs).to(self.device))
+            _, _, _, pi = self.policy(torch.Tensor(obs).to(self.device))
             action = pi.argmax().detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
@@ -130,7 +130,7 @@ class Agent(object):
          obs = next_obs
       
       # Save total average losses
-      self.logger['LossPi'] = round(np.mean(self.actor_losses), 5)
-      self.logger['LossV'] = round(np.mean(self.critic_losses), 5)
+      self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
+      self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
       self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       return step_number, total_reward

@@ -83,10 +83,11 @@ class Agent(object):
       hard_target_update(self.qf1, self.qf1_target)
       hard_target_update(self.qf2, self.qf2_target)
 
+      # Concat the Q-network parameters to use one optim
+      self.qf_parameters = list(self.qf1.parameters()) + list(self.qf2.parameters())
       # Create optimizers
       self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
-      self.qf1_optimizer = optim.Adam(self.qf1.parameters(), lr=self.qf_lr)
-      self.qf2_optimizer = optim.Adam(self.qf2.parameters(), lr=self.qf_lr)
+      self.qf_optimizer = optim.Adam(self.qf.parameters, lr=self.qf_lr)
       
       # Experience buffer
       self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size, self.device)
@@ -138,20 +139,17 @@ class Agent(object):
          print("min_q_next_pi", min_q_next_pi.shape)
          print("q_backup", q_backup.shape)
 
-      # Soft actor-critic losses
+      # SAC losses
       policy_loss = (self.alpha*log_pi - min_q_pi).mean()
       qf1_loss = F.mse_loss(q1, q_backup.detach())
       qf2_loss = F.mse_loss(q2, q_backup.detach())
+      qf_loss = qf1_loss + qf2_loss
 
-      # Update two Q network parameter
-      self.qf1_optimizer.zero_grad()
-      qf1_loss.backward()
-      self.qf1_optimizer.step()
+      # Update two Q-network parameter
+      self.qf_optimizer.zero_grad()
+      qf_loss.backward()
+      self.qf_optimizer.step()
 
-      self.qf2_optimizer.zero_grad()
-      qf2_loss.backward()
-      self.qf2_optimizer.step()
-      
       # Update policy network parameter
       self.policy_optimizer.zero_grad()
       policy_loss.backward()

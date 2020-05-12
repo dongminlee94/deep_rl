@@ -76,7 +76,7 @@ class Agent(object):
       hard_target_update(self.qf1, self.qf1_target)
       hard_target_update(self.qf2, self.qf2_target)
 
-      # Concat the critic parameters to use one optim
+      # Concat the Q-network parameters to use one optim
       self.qf_parameters = list(self.qf1.parameters()) + list(self.qf2.parameters())
       # Create optimizers
       self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
@@ -139,7 +139,7 @@ class Agent(object):
       qf2_loss = F.mse_loss(q2, q_backup.detach())
       qf_loss = qf1_loss + qf2_loss
 
-      # Update two Q network network parameter
+      # Update two Q-network parameter
       self.qf_optimizer.zero_grad()
       qf_loss.backward()
       self.qf_optimizer.step()

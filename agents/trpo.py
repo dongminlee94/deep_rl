@@ -21,7 +21,7 @@ class Agent(object):
                 args,
                 device,
                 obs_dim,
-                act_dim,
+                act_dimvf
                 act_limit,
                 steps=0,
                 gamma=0.99,
@@ -29,16 +29,16 @@ class Agent(object):
                 delta=1e-2,
                 hidden_sizes=(64,64),
                 sample_size=2000,
-                critic_lr=1e-3,
-                train_critic_iters=80,
+                vf_lr=1e-3,
+                train_vf_iters=80,
                 backtrack_iter=10,
                 backtrack_coeff=1.0,
                 backtrack_alpha=0.5,
                 eval_mode=False,
-                actor_losses=list(),
-                critic_losses=list(),
-                actor_delta_losses=list(),
-                critic_delta_losses=list(),
+                policy_losses=list(),
+                vf_losses=list(),
+                policy_delta_losses=list(),
+                vf_delta_losses=list(),
                 kls=list(),
                 backtrack_iters=list(),
                 logger=dict(),
@@ -56,27 +56,27 @@ class Agent(object):
       self.delta = delta
       self.hidden_sizes = hidden_sizes
       self.sample_size = sample_size
-      self.critic_lr = critic_lr
-      self.train_critic_iters = train_critic_iters
+      self.vf_lr = vf_lr
+      self.train_vf_iters = train_vf_iters
       self.backtrack_iter = backtrack_iter
       self.backtrack_coeff = backtrack_coeff
       self.backtrack_alpha = backtrack_alpha
       self.eval_mode = eval_mode
-      self.actor_losses = actor_losses
-      self.critic_losses = critic_losses
-      self.actor_delta_losses = actor_delta_losses
-      self.critic_delta_losses = critic_delta_losses
+      self.policy_losses = policy_losses
+      self.vf_losses = vf_losses
+      self.policy_delta_losses = policy_delta_losses
+      self.vf_delta_losses = vf_delta_losses
       self.kls = kls
       self.backtrack_iters = backtrack_iters
       self.logger = logger
 
       # Main network
-      self.actor = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
-      self.old_actor = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
-      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
+      self.policy = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
+      self.old_policy = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
+      self.vf = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
       # Create optimizers
-      self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
+      self.vf_optimizer = optim.Adam(self.vf.parameters(), lr=self.vf_lr)
       
       # Experience buffer
       self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
@@ -106,19 +106,19 @@ class Agent(object):
 
    def hessian_vector_product(self, obs, p, damping_coeff=0.1):
       p.detach()
-      kl = self.gaussian_kl(old_actor=self.actor, new_actor=self.actor, obs=obs)
-      kl_grad = torch.autograd.grad(kl, self.actor.parameters(), create_graph=True)
+      kl = self.gaussian_kl(old_policy=self.policy, new_policy=self.policy, obs=obs)
+      kl_grad = torch.autograd.grad(kl, self.policy.parameters(), create_graph=True)
       kl_grad = self.flat_grad(kl_grad)
 
       kl_grad_p = (kl_grad * p).sum() 
-      kl_hessian = torch.autograd.grad(kl_grad_p, self.actor.parameters())
+      kl_hessian = torch.autograd.grad(kl_grad_p, self.policy.parameters())
       kl_hessian = self.flat_grad(kl_hessian, hessian=True)
       return kl_hessian + p * damping_coeff
    
-   def gaussian_kl(self, old_actor, new_actor, obs):
-      mu_old, std_old, _, _ = old_actor(obs)
+   def gaussian_kl(self, old_policy, new_policy, obs):
+      mu_old, std_old, _, _ = old_policy(obs)
       mu_old, std_old = mu_old.detach(), std_old.detach()
-      mu, std, _, _ = new_actor(obs)
+      mu, std, _, _ = new_policy(obs)
 
       # kl divergence between old policy and new policy : D( pi_old || pi_new )
       # (https://stats.stackexchange.com/questions/7440/kl-divergence-between-two-univariate-gaussians)
@@ -168,12 +168,12 @@ class Agent(object):
          print("adv", adv.shape)
 
       # Prediction logπ_old(s), logπ(s), V(s)
-      _, _, dist_old, _ = self.actor(obs)
+      _, _, dist_old, _ = self.policy(obs)
       log_pi_old = dist_old.log_prob(act)
       log_pi_old = log_pi_old.detach()
-      _, _, dist, _ = self.actor(obs)
+      _, _, dist, _ = self.policy(obs)
       log_pi = dist.log_prob(act)
-      v = self.critic(obs).squeeze(1)
+      v = self.vf(obs).squeeze(1)
       
       if 0: # Check shape of prediction
          print("log_pi", log_pi.shape)
@@ -181,38 +181,38 @@ class Agent(object):
    
       # TRPO losses
       ratio_old = torch.exp(log_pi - log_pi_old)
-      actor_loss_old = (ratio_old*adv).mean()
-      critic_loss_old = F.mse_loss(v, ret)
+      policy_loss_old = (ratio_old*adv).mean()
+      vf_loss_old = F.mse_loss(v, ret)
       
-      # Update critic network parameter
-      for _ in range(self.train_critic_iters):
-         self.critic_optimizer.zero_grad()
-         critic_loss_old.backward(retain_graph=True)
-         self.critic_optimizer.step()
-      v_new = self.critic(obs).squeeze(1)
-      critic_loss = F.mse_loss(v_new, ret)
+      # Update value network parameter
+      for _ in range(self.train_vf_iters):
+         self.vf_optimizer.zero_grad()
+         vf_loss_old.backward(retain_graph=True)
+         self.vf_optimizer.step()
+      v_new = self.vf(obs).squeeze(1)
+      vf_loss = F.mse_loss(v_new, ret)
 
       # Symbols needed for CG solver
-      gradient = torch.autograd.grad(actor_loss_old, self.actor.parameters())
+      gradient = torch.autograd.grad(policy_loss_old, self.policy.parameters())
       gradient = self.flat_grad(gradient)
 
       # Core calculations for NPG or TRPO
       search_dir = self.cg(obs, gradient.data)
       gHg = (self.hessian_vector_product(obs, search_dir) * search_dir).sum(0)
       step_size = torch.sqrt(2 * self.delta / gHg)
-      old_params = self.flat_params(self.actor)
-      self.update_model(self.old_actor, old_params)
+      old_params = self.flat_params(self.policy)
+      self.update_model(self.old_policy, old_params)
 
       if self.args.algo == 'npg':
          params = old_params + step_size * search_dir
-         self.update_model(self.actor, params)
+         self.update_model(self.policy, params)
 
-         _, _, dist, _ = self.actor(obs)
+         _, _, dist, _ = self.policy(obs)
          log_pi = dist.log_prob(act)
          ratio = torch.exp(log_pi - log_pi_old)
-         actor_loss = (ratio*adv).mean()
+         policy_loss = (ratio*adv).mean()
 
-         kl = self.gaussian_kl(new_actor=self.actor, old_actor=self.old_actor, obs=obs)
+         kl = self.gaussian_kl(new_policy=self.policy, old_policy=self.old_policy, obs=obs)
       elif self.args.algo == 'trpo':
          expected_improve = (gradient * step_size * search_dir).sum(0, keepdim=True)
 
@@ -220,18 +220,18 @@ class Agent(object):
             # Backtracking line search
             # (https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf) 464p.
             params = old_params + self.backtrack_coeff * step_size * search_dir
-            self.update_model(self.actor, params)
+            self.update_model(self.policy, params)
 
-            _, _, dist, _ = self.actor(obs)
+            _, _, dist, _ = self.policy(obs)
             log_pi = dist.log_prob(act)
             ratio = torch.exp(log_pi - log_pi_old)
-            actor_loss = (ratio*adv).mean()
+            policy_loss = (ratio*adv).mean()
 
-            loss_improve = actor_loss - actor_loss_old
+            loss_improve = policy_loss - policy_loss_old
             expected_improve *= self.backtrack_coeff
             improve_condition = loss_improve / expected_improve
 
-            kl = self.gaussian_kl(new_actor=self.actor, old_actor=self.old_actor, obs=obs)
+            kl = self.gaussian_kl(new_policy=self.policy, old_policy=self.old_policy, obs=obs)
             
             if kl < self.delta and improve_condition > self.backtrack_alpha:
                print('Accepting new params at step %d of line search.'%i)
@@ -242,16 +242,16 @@ class Agent(object):
                print('Line search failed! Keeping old params.')
                self.backtrack_iters.append(i)
 
-               params = self.flat_params(self.old_actor)
-               self.update_model(self.actor, params)
+               params = self.flat_params(self.old_policy)
+               self.update_model(self.policy, params)
 
             self.backtrack_coeff *= 0.5
 
       # Save losses
-      self.actor_losses.append(actor_loss_old.item())
-      self.critic_losses.append(critic_loss_old.item())
-      self.actor_delta_losses.append((actor_loss - actor_loss_old).item())
-      self.critic_delta_losses.append((critic_loss - critic_loss_old).item())
+      self.policy_losses.append(policy_loss_old.item())
+      self.vf_losses.append(vf_loss_old.item())
+      self.policy_delta_losses.append((policy_loss - policy_loss_old).item())
+      self.vf_delta_losses.append((vf_loss - vf_loss_old).item())
       self.kls.append(kl.item())
 
    def run(self, max_step):
@@ -264,19 +264,19 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action, _, _, _ = self.actor(torch.Tensor(obs).to(self.device))
+            action, _, _, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, _, _, action = self.actor(torch.Tensor(obs).to(self.device))
+            _, _, _, action = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to buffer
-            val = self.critic(torch.Tensor(obs).to(self.device))
+            val = self.vf(torch.Tensor(obs).to(self.device))
             self.buffer.add(obs, action, reward, done, val)
             
             # Start training when the number of experience is equal to sample size
@@ -290,10 +290,10 @@ class Agent(object):
          obs = next_obs
       
       # Save logs
-      self.logger['LossPi'] = round(np.mean(self.actor_losses), 5)
-      self.logger['LossV'] = round(np.mean(self.critic_losses), 5)
-      self.logger['DeltaLossPi'] = round(np.mean(self.actor_delta_losses), 5)
-      self.logger['DeltaLossV'] = round(np.mean(self.critic_delta_losses), 5)
+      self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
+      self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
+      self.logger['DeltaLossPi'] = round(np.mean(self.policy_delta_losses), 5)
+      self.logger['DeltaLossV'] = round(np.mean(self.vf_delta_losses), 5)
       self.logger['KL'] = round(np.mean(self.kls), 5)
       if self.args.algo == 'trpo':
          self.logger['BacktrackIters'] = np.mean(self.backtrack_iters)

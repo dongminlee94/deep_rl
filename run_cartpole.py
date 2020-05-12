@@ -131,7 +131,7 @@ def main():
                 if args.algo == 'dqn' or args.algo == 'ddqn':
                     torch.save(agent.qf.state_dict(), ckpt_path)
                 else:
-                    torch.save(agent.actor.state_dict(), ckpt_path)
+                    torch.save(agent.policy.state_dict(), ckpt_path)
 
 if __name__ == "__main__":
     main()
