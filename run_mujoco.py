@@ -195,7 +195,7 @@ def main():
                                                                             + '_tr_' + str(round(train_average_return, 2)) \
                                                                             + '_er_' + str(round(eval_average_return, 2)) + '.pt')
             
-            torch.save(agent.actor.state_dict(), ckpt_path)
+            torch.save(agent.policy.state_dict(), ckpt_path)
 
 if __name__ == "__main__":
     main()
