@@ -87,7 +87,7 @@ class Agent(object):
       self.qf_parameters = list(self.qf1.parameters()) + list(self.qf2.parameters())
       # Create optimizers
       self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
-      self.qf_optimizer = optim.Adam(self.qf.parameters, lr=self.qf_lr)
+      self.qf_optimizer = optim.Adam(self.qf_parameters, lr=self.qf_lr)
       
       # Experience buffer
       self.replay_buffer = ReplayBuffer(self.obs_dim, self.act_dim, self.buffer_size, self.device)
