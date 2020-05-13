@@ -71,7 +71,7 @@ def main():
                       hidden_sizes=(256,256), 
                       buffer_size=int(1e6), 
                       batch_size=256,
-                      policy_lr=1e-4, 
+                      policy_lr=1e-3, 
                       qf_lr=1e-3)
     elif args.algo == 'sac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
