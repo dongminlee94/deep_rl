@@ -170,7 +170,7 @@ class Agent(object):
       # Prediction logπ_old(s), logπ(s), V(s)
       _, _, dist_old, _ = self.policy(obs)
       log_pi_old = dist_old.log_prob(act)
-      log_pi_old = log_pi_old.detach()
+      # log_pi_old = log_pi_old.detach()
       _, _, dist, _ = self.policy(obs)
       log_pi = dist.log_prob(act)
       v = self.vf(obs).squeeze(1)

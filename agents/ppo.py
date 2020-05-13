@@ -20,7 +20,6 @@ class Agent(object):
                 act_dim,
                 act_limit,
                 steps=0,
-                start_steps=2000,
                 gamma=0.99,
                 lam=0.97,
                 hidden_sizes=(64,64),
@@ -45,7 +44,6 @@ class Agent(object):
       self.act_dim = act_dim
       self.act_limit = act_limit
       self.steps = steps 
-      self.start_steps = start_steps
       self.gamma = gamma
       self.lam = lam
       self.hidden_sizes = hidden_sizes
@@ -83,9 +81,9 @@ class Agent(object):
       # Prediction logπ_old(s), logπ(s), V(s)
       _, _, dist_old, _ = self.policy(obs)
       log_pi_old = dist_old.log_prob(act)
-      log_pi_old = log_pi_old.detach()
+      # log_pi_old = log_pi_old.detach()
       v_old = self.vf(obs).squeeze(1)
-      v_old = v_old.detach()
+      # v_old = v_old.detach()
 
       if 0: # Check shape of experiences & predictions
          print("obs", obs.shape)
