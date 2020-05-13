@@ -47,18 +47,20 @@ class Buffer(object):
         self.don_buf = np.zeros(size, dtype=np.float32)
         self.ret_buf = np.zeros(size, dtype=np.float32)
         self.adv_buf = np.zeros([size, 1], dtype=np.float32)
-        self.val_buf = np.zeros(size, dtype=np.float32)
+        self.log_pi_buf = np.zeros(size, dtype=np.float32)
+        self.v_buf = np.zeros(size, dtype=np.float32)
         self.gamma, self.lam = gamma, lam
         self.ptr, self.max_size = 0, size
         self.device = device
 
-    def add(self, obs, act, rew, don, val):
+    def add(self, obs, act, rew, don, val, log_pi):
         assert self.ptr < self.max_size      # Buffer has to have room so you can store
         self.obs_buf[self.ptr] = obs
         self.act_buf[self.ptr] = act
         self.rew_buf[self.ptr] = rew
         self.don_buf[self.ptr] = don
-        self.val_buf[self.ptr] = val
+        self.log_pi_buf[self.ptr] = log_pi
+        self.v_buf[self.ptr] = val
         self.ptr += 1
 
     def finish_path(self):
@@ -71,9 +73,9 @@ class Buffer(object):
             self.ret_buf[t] = running_ret
 
             # The next four lines implement GAE-Lambda advantage calculation
-            running_del = self.rew_buf[t] + self.gamma*(1-self.don_buf[t])*previous_v - self.val_buf[t]
+            running_del = self.rew_buf[t] + self.gamma*(1-self.don_buf[t])*previous_v - self.v_buf[t]
             running_adv = running_del + self.gamma*self.lam*(1-self.don_buf[t])*running_adv
-            previous_v = self.val_buf[t]
+            previous_v = self.v_buf[t]
             self.adv_buf[t] = running_adv
         # The next line implement the advantage normalization trick
         self.adv_buf = (self.adv_buf - self.adv_buf.mean()) / self.adv_buf.std()
@@ -84,5 +86,7 @@ class Buffer(object):
         return dict(obs=torch.Tensor(self.obs_buf).to(self.device),
                     act=torch.Tensor(self.act_buf).to(self.device),
                     ret=torch.Tensor(self.ret_buf).to(self.device),
-                    adv=torch.Tensor(self.adv_buf).to(self.device))
+                    adv=torch.Tensor(self.adv_buf).to(self.device),
+                    log_pi=torch.Tensor(self.log_pi_buf).to(self.device),
+                    v=torch.Tensor(self.v_buf).to(self.device))
         

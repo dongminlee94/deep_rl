@@ -37,8 +37,6 @@ class Agent(object):
                 eval_mode=False,
                 policy_losses=list(),
                 vf_losses=list(),
-                policy_delta_losses=list(),
-                vf_delta_losses=list(),
                 kls=list(),
                 backtrack_iters=list(),
                 logger=dict(),
@@ -64,8 +62,6 @@ class Agent(object):
       self.eval_mode = eval_mode
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
-      self.policy_delta_losses = policy_delta_losses
-      self.vf_delta_losses = vf_delta_losses
       self.kls = kls
       self.backtrack_iters = backtrack_iters
       self.logger = logger
@@ -160,37 +156,31 @@ class Agent(object):
       act = batch['act']
       ret = batch['ret']
       adv = batch['adv']
+      log_pi_old = batch['log_pi']
 
-      if 0: # Check shape of experiences
+      # Prediction logπ_old(s), logπ(s), V(s)
+      _, pi, log_pi, _ = self.policy(obs)
+      v = self.vf(obs).squeeze(1)
+      
+      if 0: # Check shape of experiences & predictions
          print("obs", obs.shape)
          print("act", act.shape)
          print("ret", ret.shape)
          print("adv", adv.shape)
-
-      # Prediction logπ_old(s), logπ(s), V(s)
-      _, _, dist_old, _ = self.policy(obs)
-      log_pi_old = dist_old.log_prob(act)
-      # log_pi_old = log_pi_old.detach()
-      _, _, dist, _ = self.policy(obs)
-      log_pi = dist.log_prob(act)
-      v = self.vf(obs).squeeze(1)
-      
-      if 0: # Check shape of prediction
+         print("log_pi_old", log_pi_old.shape)
          print("log_pi", log_pi.shape)
          print("v", v.shape)
    
       # TRPO losses
       ratio_old = torch.exp(log_pi - log_pi_old)
       policy_loss_old = (ratio_old*adv).mean()
-      vf_loss_old = F.mse_loss(v, ret)
+      vf_loss = F.mse_loss(v, ret)
       
       # Update value network parameter
       for _ in range(self.train_vf_iters):
          self.vf_optimizer.zero_grad()
-         vf_loss_old.backward(retain_graph=True)
+         vf_loss.backward()
          self.vf_optimizer.step()
-      v_new = self.vf(obs).squeeze(1)
-      vf_loss = F.mse_loss(v_new, ret)
 
       # Symbols needed for CG solver
       gradient = torch.autograd.grad(policy_loss_old, self.policy.parameters())
@@ -207,11 +197,6 @@ class Agent(object):
          params = old_params + step_size * search_dir
          self.update_model(self.policy, params)
 
-         _, _, dist, _ = self.policy(obs)
-         log_pi = dist.log_prob(act)
-         ratio = torch.exp(log_pi - log_pi_old)
-         policy_loss = (ratio*adv).mean()
-
          kl = self.gaussian_kl(new_policy=self.policy, old_policy=self.old_policy, obs=obs)
       elif self.args.algo == 'trpo':
          expected_improve = (gradient * step_size * search_dir).sum(0, keepdim=True)
@@ -222,8 +207,7 @@ class Agent(object):
             params = old_params + self.backtrack_coeff * step_size * search_dir
             self.update_model(self.policy, params)
 
-            _, _, dist, _ = self.policy(obs)
-            log_pi = dist.log_prob(act)
+            _, _, log_pi, _ = self.policy(obs)
             ratio = torch.exp(log_pi - log_pi_old)
             policy_loss = (ratio*adv).mean()
 
@@ -249,9 +233,7 @@ class Agent(object):
 
       # Save losses
       self.policy_losses.append(policy_loss_old.item())
-      self.vf_losses.append(vf_loss_old.item())
-      self.policy_delta_losses.append((policy_loss - policy_loss_old).item())
-      self.vf_delta_losses.append((vf_loss - vf_loss_old).item())
+      self.vf_losses.append(vf_loss.item())
       self.kls.append(kl.item())
 
    def run(self, max_step):
@@ -271,13 +253,13 @@ class Agent(object):
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, _, _, action = self.policy(torch.Tensor(obs).to(self.device))
+            _, action, log_pi, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to buffer
-            val = self.vf(torch.Tensor(obs).to(self.device))
-            self.buffer.add(obs, action, reward, done, val)
+            v = self.vf(torch.Tensor(obs).to(self.device))
+            self.buffer.add(obs, action, reward, done, log_pi, v)
             
             # Start training when the number of experience is equal to sample size
             if self.steps == self.sample_size:
@@ -292,8 +274,6 @@ class Agent(object):
       # Save logs
       self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
-      self.logger['DeltaLossPi'] = round(np.mean(self.policy_delta_losses), 5)
-      self.logger['DeltaLossV'] = round(np.mean(self.vf_delta_losses), 5)
       self.logger['KL'] = round(np.mean(self.kls), 5)
       if self.args.algo == 'trpo':
          self.logger['BacktrackIters'] = np.mean(self.backtrack_iters)
