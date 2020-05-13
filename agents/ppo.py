@@ -50,7 +50,7 @@ class Agent(object):
       self.hidden_sizes = hidden_sizes
       self.sample_size = sample_size
       self.train_policy_iters = train_policy_iters
-      self.train_v_iters = train_v_iters
+      self.train_vf_iters = train_vf_iters
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
       self.clip_param = clip_param
@@ -94,7 +94,7 @@ class Agent(object):
       kl = (log_pi_old - log_pi).mean()
       return policy_loss, kl, ent
 
-   def compute_v_loss(self, batch):
+   def compute_vf_loss(self, batch):
       obs, ret, v_old = batch['obs'], batch['ret'], batch['v']
 
       # Prediction V(s)
@@ -109,8 +109,8 @@ class Agent(object):
       batch = self.buffer.get()
       
       # Train value with multiple steps of gradient descent
-      for i in range(self.train_v_iters):
-         vf_loss = self.compute_v_loss(batch)
+      for i in range(self.train_vf_iters):
+         vf_loss = self.compute_vf_loss(batch)
 
          # Update value network parameter
          self.vf_optimizer.zero_grad()
