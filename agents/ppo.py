@@ -32,8 +32,8 @@ class Agent(object):
                 eval_mode=False,
                 policy_losses=list(),
                 vf_losses=list(),
-                entropies=list(),
                 kls=list(),
+                entropies=list(),
                 logger=dict(),
    ):
 
@@ -56,8 +56,8 @@ class Agent(object):
       self.eval_mode = eval_mode
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
-      self.entropies = entropies
       self.kls = kls
+      self.entropies = entropies
       self.logger = logger
 
       # Main network
@@ -123,15 +123,15 @@ class Agent(object):
             self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
-      _, _, _, dist = self.policy(obs)
-      ent = dist.entropy().mean()            # a sample estimate for entropy, also easy to compute
+      _, _, log_pi, dist = self.policy(obs)
       kl = (log_pi_old - log_pi).mean()      # a sample estimate for KL-divergence, easy to compute
+      ent = dist.entropy().mean()            # a sample estimate for entropy, also easy to compute
       
       # Save losses
       self.policy_losses.append(policy_loss.item())
       self.vf_losses.append(vf_loss.item())
-      self.entropies.append(ent.item())
       self.kls.append(kl.item())
+      self.entropies.append(ent.item())
 
    def run(self, max_step):
       step_number = 0
@@ -171,6 +171,6 @@ class Agent(object):
       # Save logs
       self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
-      self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       self.logger['KL'] = round(np.mean(self.kls), 5)
+      self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       return step_number, total_reward
