@@ -24,11 +24,12 @@ class Agent(object):
                 lam=0.97,
                 hidden_sizes=(64,64),
                 sample_size=2000,
-                mini_batch_size=64,
+                train_policy_iters=80,
+                train_vf_iters=80,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
                 clip_param=0.2,
-                epoch=10,
+                target_kl=0.01,
                 eval_mode=False,
                 policy_losses=list(),
                 vf_losses=list(),
@@ -48,11 +49,12 @@ class Agent(object):
       self.lam = lam
       self.hidden_sizes = hidden_sizes
       self.sample_size = sample_size
-      self.mini_batch_size = mini_batch_size
+      self.train_policy_iters = train_policy_iters
+      self.train_vf_iters = train_vf_iters
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
       self.clip_param = clip_param
-      self.epoch = epoch
+      self.target_kl = target_kl
       self.eval_mode = eval_mode
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
@@ -71,75 +73,62 @@ class Agent(object):
       # Experience buffer
       self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
 
-   def train_model(self):
-      batch = self.buffer.get()
-      obs = batch['obs']
-      act = batch['act']
-      ret = batch['ret']
-      adv = batch['adv']
-      log_pi_old = batch['log_pi']
-      v_old = batch['v']
-
-      # Prediction logπ(s), V(s)
-      _, _, log_pi, ent = self.policy(obs)
-      v = self.vf(obs).squeeze(1)
+   def compute_policy_loss(self, batch):
+      obs, act, adv, log_pi_old = batch['obs'], batch['act'], batch['adv'], batch['log_pi']
 
       if 0: # Check shape of experiences & predictions
          print("obs", obs.shape)
          print("act", act.shape)
-         print("ret", ret.shape)
          print("adv", adv.shape)
          print("log_pi_old", log_pi_old.shape)
-         print("log_pi", log_pi.shape)
-         print("v_old", v_old.shape)
-         print("v", v.shape)
-
-      for _ in range(self.epoch):
-         for _ in range(self.sample_size // self.mini_batch_size):
-            random_idxs = np.random.choice(self.sample_size, self.mini_batch_size)
-            
-            mini_obs = obs[random_idxs,:]
-            mini_act = act[random_idxs,:]
-            mini_ret = ret[random_idxs]
-            mini_adv = adv[random_idxs]
-            mini_log_pi_old = log_pi_old[random_idxs]
-            mini_log_pi = log_pi[random_idxs]
-            mini_v_old = v_old[random_idxs]
-            mini_v = v[random_idxs]
-
-            if 0: # Check shape of experiences & predictions with mini-batch size
-               print("random_idxs", random_idxs.shape)
-               print("mini_obs", mini_obs.shape)
-               print("mini_act", mini_act.shape)
-               print("mini_ret", mini_ret.shape)
-               print("mini_adv", mini_adv.shape)
-               print("mini_log_pi_old", mini_log_pi_old.shape)
-               print("mini_log_pi", mini_log_pi.shape)
-               print("mini_v_old", mini_v_old.shape)
-               print("mini_v", mini_v.shape)
-
-            # PPO losses
-            ratio = torch.exp(mini_log_pi - mini_log_pi_old)
-            clip_mini_adv = (torch.clamp(ratio, 1.-self.clip_param, 1.+self.clip_param)*mini_adv)
-            policy_loss = -torch.min(ratio*mini_adv, clip_mini_adv).mean()
-            
-            clip_mini_v = mini_v_old + torch.clamp(mini_v-mini_v_old, -self.clip_param, self.clip_param)
-            vf_loss = torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clip_mini_v, mini_ret))
-
-            total_loss = policy_loss + 0.5 * vf_loss
-
-            # Update value network parameter
-            self.vf_optimizer.zero_grad()
-            total_loss.backward(retain_graph=True)
-            self.vf_optimizer.step()
-
-            # Update policy network parameter
-            self.policy_optimizer.zero_grad()
-            total_loss.backward()
-            self.policy_optimizer.step()
+      
+      # Prediction logπ(s)
+      _, _, log_pi, ent = self.policy(obs)
+      
+      # Policy loss
+      ratio = torch.exp(log_pi - log_pi_old)
+      clip_adv = (torch.clamp(ratio, 1.-self.clip_param, 1.+self.clip_param)*adv)
+      policy_loss = -torch.min(ratio*adv, clip_adv).mean()
 
       # Info (useful to watch during learning)
-      kl = (log_pi_old - log_pi).mean()     # a sample estimate for KL-divergence, easy to compute
+      kl = (log_pi_old - log_pi).mean()
+      return policy_loss, kl, ent
+
+   def compute_vf_loss(self, batch):
+      obs, ret, v_old = batch['obs'], batch['ret'], batch['v']
+
+      # Prediction V(s)
+      v = self.vf(obs).squeeze(1)
+
+      # Value loss
+      clip_v = v_old + torch.clamp(v-v_old, -self.clip_param, self.clip_param)
+      vf_loss = torch.max(F.mse_loss(v, ret), F.mse_loss(clip_v, ret))
+      return vf_loss
+
+   def train_model(self):
+      batch = self.buffer.get()
+      
+      # Train value with multiple steps of gradient descent
+      for i in range(self.train_vf_iters):
+         vf_loss = self.compute_vf_loss(batch)
+
+         # Update value network parameter
+         self.vf_optimizer.zero_grad()
+         vf_loss.backward()
+         self.vf_optimizer.step()
+      
+      # Train policy with multiple steps of gradient descent
+      for i in range(self.train_policy_iters):
+         policy_loss, kl, ent = self.compute_policy_loss(batch)
+
+         if kl > 1.5 * self.target_kl:
+            print('Early stopping at step %d due to reaching max kl.'%i)
+            break
+
+         # Update policy network parameter
+         self.policy_optimizer.zero_grad()
+         policy_loss.backward()
+         self.policy_optimizer.step()
 
       # Save losses
       self.policy_losses.append(policy_loss.item())
