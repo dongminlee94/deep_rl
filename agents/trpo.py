@@ -38,6 +38,7 @@ class Agent(object):
                 policy_losses=list(),
                 vf_losses=list(),
                 kls=list(),
+                entropies=list(),
                 backtrack_iters=list(),
                 logger=dict(),
    ):
@@ -63,6 +64,7 @@ class Agent(object):
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
       self.kls = kls
+      self.entropies = entropies
       self.backtrack_iters = backtrack_iters
       self.logger = logger
 
@@ -159,7 +161,7 @@ class Agent(object):
       log_pi_old = batch['log_pi']
 
       # Prediction logπ(s), V(s)
-      _, pi, log_pi, _ = self.policy(obs)
+      _, _, log_pi, ent = self.policy(obs)
       v = self.vf(obs).squeeze(1)
       
       if 0: # Check shape of experiences & predictions
@@ -235,6 +237,7 @@ class Agent(object):
       self.policy_losses.append(policy_loss_old.item())
       self.vf_losses.append(vf_loss.item())
       self.kls.append(kl.item())
+      self.entropies.append(ent.item())
 
    def run(self, max_step):
       step_number = 0
@@ -275,6 +278,7 @@ class Agent(object):
       self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
       self.logger['KL'] = round(np.mean(self.kls), 5)
+      self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       if self.args.algo == 'trpo':
          self.logger['BacktrackIters'] = np.mean(self.backtrack_iters)
       return step_number, total_reward

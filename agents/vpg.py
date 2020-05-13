@@ -79,7 +79,7 @@ class Agent(object):
       log_pi_old = batch['log_pi']
 
       # Prediction logπ(s), V(s)
-      _, pi, log_pi, ent = self.policy(obs)
+      _, _, log_pi, ent = self.policy(obs)
       v = self.vf(obs).squeeze(1)
       
       if 0: # Check shape of experiences & predictions
@@ -107,14 +107,13 @@ class Agent(object):
       self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
-      approx_kl = (log_pi_old - log_pi).mean()     # a sample estimate for KL-divergence, easy to compute
-      approx_ent = ent                             # a sample estimate for entropy, also easy to compute
+      kl = (log_pi_old - log_pi).mean()     # a sample estimate for KL-divergence, easy to compute
 
       # Save losses
       self.policy_losses.append(policy_loss.item())
       self.vf_losses.append(vf_loss.item())
-      self.kls.append(approx_kl.item())
-      self.entropies.append(approx_ent.item())
+      self.kls.append(kl.item())
+      self.entropies.append(ent.item())
 
    def run(self, max_step):
       step_number = 0
