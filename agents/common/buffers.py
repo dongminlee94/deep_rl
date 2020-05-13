@@ -53,14 +53,14 @@ class Buffer(object):
         self.ptr, self.max_size = 0, size
         self.device = device
 
-    def add(self, obs, act, rew, don, val, log_pi):
+    def add(self, obs, act, rew, don, log_pi, v):
         assert self.ptr < self.max_size      # Buffer has to have room so you can store
         self.obs_buf[self.ptr] = obs
         self.act_buf[self.ptr] = act
         self.rew_buf[self.ptr] = rew
         self.don_buf[self.ptr] = don
         self.log_pi_buf[self.ptr] = log_pi
-        self.v_buf[self.ptr] = val
+        self.v_buf[self.ptr] = v
         self.ptr += 1
 
     def finish_path(self):

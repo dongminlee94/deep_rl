@@ -76,20 +76,19 @@ class Agent(object):
       act = batch['act']
       ret = batch['ret']
       adv = batch['adv']
+      log_pi_old = batch['log_pi']
 
-      if 0: # Check shape of experiences
+      # Prediction logπ(s), V(s)
+      _, pi, log_pi, ent = self.policy(obs)
+      v = self.vf(obs).squeeze(1)
+      
+      if 0: # Check shape of experiences & predictions
          print("obs", obs.shape)
          print("act", act.shape)
          print("ret", ret.shape)
          print("adv", adv.shape)
-
-      # Prediction logπ(s), V(s)
-      _, _, dist_old, _ = self.policy(obs)
-      log_pi_old = dist_old.log_prob(act)
-      v = self.vf(obs).squeeze(1)
-      
-      if 0: # Check shape of prediction
          print("log_pi_old", log_pi_old.shape)
+         print("log_pi", log_pi.shape)
          print("v", v.shape)
 
       # VPG losses
@@ -99,7 +98,7 @@ class Agent(object):
       # Update value network parameter
       for _ in range(self.train_vf_iters):
          self.vf_optimizer.zero_grad()
-         vf_loss.backward(retain_graph=True)
+         vf_loss.backward()
          self.vf_optimizer.step()
       
       # Update policy network parameter
@@ -108,10 +107,8 @@ class Agent(object):
       self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
-      _, _, dist, _ = self.policy(obs)
-      log_pi = dist.log_prob(act)
       approx_kl = (log_pi_old - log_pi).mean()     # a sample estimate for KL-divergence, easy to compute
-      approx_ent = dist.entropy().mean()           # a sample estimate for entropy, also easy to compute
+      approx_ent = ent                             # a sample estimate for entropy, also easy to compute
 
       # Save losses
       self.policy_losses.append(policy_loss.item())
@@ -136,13 +133,13 @@ class Agent(object):
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, _, _, action = self.policy(torch.Tensor(obs).to(self.device))
+            _, action, log_pi, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to buffer
-            val = self.vf(torch.Tensor(obs).to(self.device))
-            self.buffer.add(obs, action, reward, done, val)
+            v = self.vf(torch.Tensor(obs).to(self.device))
+            self.buffer.add(obs, action, reward, done, log_pi, v)
             
             # Start training when the number of experience is equal to sample size
             if self.steps == self.sample_size:

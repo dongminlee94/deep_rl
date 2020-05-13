@@ -158,7 +158,7 @@ class Agent(object):
       adv = batch['adv']
       log_pi_old = batch['log_pi']
 
-      # Prediction logπ_old(s), logπ(s), V(s)
+      # Prediction logπ(s), V(s)
       _, pi, log_pi, _ = self.policy(obs)
       v = self.vf(obs).squeeze(1)
       
