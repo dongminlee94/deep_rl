@@ -66,9 +66,10 @@ class Agent(object):
       self.policy = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
       self.vf = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
+      # Concat the policy network parameter & the value network parameter to use one optim
+      self.net_parameters = list(self.policy.parameters()) + list(self.vf.parameters())
       # Create optimizers
-      self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
-      self.vf_optimizer = optim.Adam(self.vf.parameters(), lr=self.vf_lr)
+      self.net_optimizer = optim.Adam(self.net_parameters, lr=self.policy_lr)
       
       # Experience buffer
       self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
@@ -117,16 +118,16 @@ class Agent(object):
             total_loss = policy_loss + 0.5 * vf_loss
 
             # Update value network parameter
-            self.vf_optimizer.zero_grad()
+            self.net_optimizer.zero_grad()
             total_loss.backward()
-            nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
-            self.vf_optimizer.step()
+            nn.utils.clip_grad_norm_(self.net_parameters, self.gradient_clip)
+            self.net_optimizer.step()
 
-            # Update policy network parameter
-            self.policy_optimizer.zero_grad()
-            total_loss.backward()
-            nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
-            self.policy_optimizer.step()
+            # # Update policy network parameter
+            # self.policy_optimizer.zero_grad()
+            # total_loss.backward()
+            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            # self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
       _, _, log_pi, dist = self.policy(obs)
