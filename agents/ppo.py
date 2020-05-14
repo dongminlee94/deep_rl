@@ -121,9 +121,9 @@ class Agent(object):
       for i in range(self.train_policy_iters):
          policy_loss, kl, ent = self.compute_policy_loss(batch)
 
-         if kl > 1.5 * self.target_kl:
-            print('Early stopping at step %d due to reaching max kl.'%i)
-            break
+         # if kl > 1.5 * self.target_kl:
+         #    print('Early stopping at step %d due to reaching max kl.'%i)
+         #    break
 
          # Update policy network parameter
          self.policy_optimizer.zero_grad()
