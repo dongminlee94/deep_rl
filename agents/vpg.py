@@ -29,6 +29,7 @@ class Agent(object):
                 sample_size=2000,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
+                gradient_clip=0.5,
                 train_vf_iters=80,
                 eval_mode=False,
                 policy_losses=list(),
@@ -50,6 +51,7 @@ class Agent(object):
       self.sample_size = sample_size
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
+      self.gradient_clip = gradient_clip
       self.train_vf_iters = train_vf_iters
       self.eval_mode = eval_mode
       self.policy_losses = policy_losses
@@ -87,11 +89,13 @@ class Agent(object):
       for _ in range(self.train_vf_iters):
          # Prediction V(s)
          v = self.vf(obs).squeeze(1)
+         
          # Value loss
          vf_loss = F.mse_loss(v, ret)
 
          self.vf_optimizer.zero_grad()
          vf_loss.backward()
+         nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
          self.vf_optimizer.step()
       
       # Prediction logπ(s)

@@ -30,6 +30,7 @@ class Agent(object):
                 hidden_sizes=(64,64),
                 sample_size=2000,
                 vf_lr=1e-3,
+                gradient_clip=0.5,
                 train_vf_iters=80,
                 backtrack_iter=10,
                 backtrack_coeff=1.0,
@@ -55,6 +56,7 @@ class Agent(object):
       self.hidden_sizes = hidden_sizes
       self.sample_size = sample_size
       self.vf_lr = vf_lr
+      self.gradient_clip = gradient_clip
       self.train_vf_iters = train_vf_iters
       self.backtrack_iter = backtrack_iter
       self.backtrack_coeff = backtrack_coeff
@@ -167,15 +169,18 @@ class Agent(object):
       
       # Update value network parameter
       for _ in range(self.train_vf_iters):
-         # Value loss
+         # Prediction V(s)
          v = self.vf(obs).squeeze(1)
+         
+         # Value loss
          vf_loss = F.mse_loss(v, ret)
 
          self.vf_optimizer.zero_grad()
          vf_loss.backward()
+         nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
          self.vf_optimizer.step()
 
-      # Prediction logπ(s), V(s)
+      # Prediction logπ(s)
       _, _, log_pi = self.policy(obs, act)
    
       # Policy loss
