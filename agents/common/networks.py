@@ -95,8 +95,9 @@ class GaussianPolicy(MLP):
         
         dist = Normal(mu, std)
         pi = dist.sample()
-        log_pi = dist.log_prob(pi).sum(dim=-1) 
-        return mu, pi, log_pi, dist
+        log_pi = dist.log_prob(pi).sum(dim=-1)
+        ent = dist.entropy().mean() 
+        return mu, pi, log_pi, ent
 
 
 """
