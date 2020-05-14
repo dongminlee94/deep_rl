@@ -27,7 +27,6 @@ class Agent(object):
                 sample_size=2048,
                 mini_batch_size=64,
                 clip_param=0.2,
-                target_kl=0.01,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
@@ -35,7 +34,6 @@ class Agent(object):
                 policy_losses=list(),
                 vf_losses=list(),
                 kls=list(),
-                entropies=list(),
                 logger=dict(),
    ):
 
@@ -53,7 +51,6 @@ class Agent(object):
       self.sample_size = sample_size
       self.mini_batch_size = mini_batch_size
       self.clip_param = clip_param
-      self.target_kl = target_kl
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
       self.gradient_clip = gradient_clip
@@ -61,7 +58,6 @@ class Agent(object):
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
       self.kls = kls
-      self.entropies = entropies
       self.logger = logger
 
       # Main network
@@ -121,27 +117,23 @@ class Agent(object):
             # Update value network parameter
             self.vf_optimizer.zero_grad()
             vf_loss.backward()
-            nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
+            # nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
             self.vf_optimizer.step()
 
             # Update policy network parameter
-            # approx_kl = (mini_log_pi_old - mini_log_pi).mean()
-            # if approx_kl <= 1.5 * self.target_kl:
             self.policy_optimizer.zero_grad()
             policy_loss.backward()
-            nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
             self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
       _, _, log_pi = self.policy(obs)
       kl = (log_pi_old - log_pi).mean()      # a sample estimate for KL-divergence, easy to compute
-      # ent = dist.entropy().mean()            # a sample estimate for entropy, also easy to compute
       
       # Save losses
       self.policy_losses.append(policy_loss.item())
       self.vf_losses.append(vf_loss.item())
       self.kls.append(kl.item())
-      # self.entropies.append(ent.item())
 
    def run(self, max_step):
       step_number = 0
@@ -182,5 +174,4 @@ class Agent(object):
       self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
       self.logger['KL'] = round(np.mean(self.kls), 5)
-      # self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       return step_number, total_reward
