@@ -130,8 +130,6 @@ class Agent(object):
             nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
             self.policy_optimizer.step()
 
-      self.buffer.clear()
-
       # Info (useful to watch during learning)
       _, _, log_pi, dist = self.policy(obs)
       kl = (log_pi_old - log_pi).mean()      # a sample estimate for KL-divergence, easy to compute
@@ -173,6 +171,8 @@ class Agent(object):
                self.buffer.finish_path()
                self.train_model()
                self.steps = 0
+               # Experience buffer
+               self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
 
          total_reward += reward
          step_number += 1

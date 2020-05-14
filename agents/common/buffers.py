@@ -53,16 +53,6 @@ class Buffer(object):
         self.ptr, self.max_size = 0, size
         self.device = device
 
-    def clear(self):
-        self.obs_buf.delete()
-        self.act_buf.delete()
-        self.rew_buf.delete()
-        self.don_buf.delete()
-        self.ret_buf.delete()
-        self.adv_buf.delete()
-        self.log_pi_buf.delete()
-        self.v_buf.delete()
-
     def add(self, obs, act, rew, don, log_pi, v):
         assert self.ptr < self.max_size      # Buffer has to have room so you can store
         self.obs_buf[self.ptr] = obs
