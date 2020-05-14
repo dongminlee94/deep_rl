@@ -79,10 +79,10 @@ class Agent(object):
       batch = self.buffer.get()
       obs = batch['obs']
       act = batch['act'].detach()
-      ret = batch['ret']
-      adv = batch['adv']
+      ret = batch['ret'].detach()
+      adv = batch['adv'].detach()
       log_pi_old = batch['log_pi'].detach()
-      v_old = batch['v']
+      v_old = batch['v'].detach()
 
       for _ in range(self.epoch):
          for _ in range(self.sample_size // self.mini_batch_size):
@@ -96,7 +96,7 @@ class Agent(object):
             mini_v_old = v_old[random_idxs]
 
             # Prediction logπ(s), V(s)
-            _, _, mini_log_pi, _ = self.policy(mini_obs)
+            _, _, mini_log_pi, _ = self.policy(mini_obs, mini_act)
             mini_v = self.vf(mini_obs).squeeze(1)
 
             if 0: # Check shape of experiences & predictions with mini-batch size
