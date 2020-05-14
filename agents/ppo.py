@@ -86,10 +86,10 @@ class Agent(object):
          for _ in range(self.sample_size // self.mini_batch_size):
             random_idxs = np.random.choice(self.sample_size, self.mini_batch_size)
             
-            mini_obs = obs[random_idxs,:]
-            mini_act = act[random_idxs,:]
-            mini_ret = ret[random_idxs]
-            mini_adv = adv[random_idxs]
+            mini_obs = obs[random_idxs,:].detach()
+            mini_act = act[random_idxs,:].detach()
+            mini_ret = ret[random_idxs].detach()
+            mini_adv = adv[random_idxs].detach()
             mini_log_pi_old = log_pi_old[random_idxs].detach()
             mini_v_old = v_old[random_idxs].detach()
 
