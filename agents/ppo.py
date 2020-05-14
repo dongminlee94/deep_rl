@@ -96,7 +96,7 @@ class Agent(object):
             mini_v_old = v_old[random_idxs]
 
             # Prediction logπ(s), V(s)
-            _, _, mini_log_pi, _ = self.policy(mini_obs, mini_act)
+            _, _, mini_log_pi = self.policy(mini_obs, mini_act)
             mini_v = self.vf(mini_obs).squeeze(1)
 
             if 0: # Check shape of experiences & predictions with mini-batch size
@@ -125,23 +125,23 @@ class Agent(object):
             self.vf_optimizer.step()
 
             # Update policy network parameter
-            approx_kl = (mini_log_pi_old - mini_log_pi).mean()
-            if approx_kl <= 1.5 * self.target_kl:
-               self.policy_optimizer.zero_grad()
-               policy_loss.backward()
-               nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
-               self.policy_optimizer.step()
+            # approx_kl = (mini_log_pi_old - mini_log_pi).mean()
+            # if approx_kl <= 1.5 * self.target_kl:
+            self.policy_optimizer.zero_grad()
+            policy_loss.backward()
+            nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
-      _, _, log_pi, dist = self.policy(obs)
+      _, _, log_pi = self.policy(obs)
       kl = (log_pi_old - log_pi).mean()      # a sample estimate for KL-divergence, easy to compute
-      ent = dist.entropy().mean()            # a sample estimate for entropy, also easy to compute
+      # ent = dist.entropy().mean()            # a sample estimate for entropy, also easy to compute
       
       # Save losses
       self.policy_losses.append(policy_loss.item())
       self.vf_losses.append(vf_loss.item())
       self.kls.append(kl.item())
-      self.entropies.append(ent.item())
+      # self.entropies.append(ent.item())
 
    def run(self, max_step):
       step_number = 0
@@ -153,14 +153,14 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action, _, _, _ = self.policy(torch.Tensor(obs).to(self.device))
+            action, _, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, action, log_pi, _ = self.policy(torch.Tensor(obs).to(self.device))
+            _, action, log_pi = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
@@ -182,5 +182,5 @@ class Agent(object):
       self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
       self.logger['KL'] = round(np.mean(self.kls), 5)
-      self.logger['Entropy'] = round(np.mean(self.entropies), 5)
+      # self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       return step_number, total_reward
