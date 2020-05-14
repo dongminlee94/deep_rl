@@ -23,7 +23,6 @@ class Agent(object):
                 eval_mode=False,
                 policy_losses=list(),
                 vf_losses=list(),
-                entropies=list(),
                 logger=dict(),
    ):
 
@@ -40,7 +39,6 @@ class Agent(object):
       self.eval_mode = eval_mode
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
-      self.entropies = entropies
       self.logger = logger
 
       # Policy network
@@ -54,14 +52,16 @@ class Agent(object):
       
    def select_action(self, obs):
       """Select an action from the set of available actions."""
-      action, log_pi, entropy, _  = self.policy(obs)
+      action, _, log_pi  = self.policy(obs)
+      
       # Prediction V(s)
       v = self.vf(obs)
-      self.transition.extend([log_pi, entropy, v])
+
+      self.transition.extend([log_pi, v])
       return action.detach().cpu().numpy()
 
    def train_model(self):
-      log_pi, entropy, v, next_obs, reward, done = self.transition
+      log_pi, v, next_obs, reward, done = self.transition
 
       # Prediction V(s')
       next_v = self.vf(torch.Tensor(next_obs).to(self.device))
@@ -75,12 +75,11 @@ class Agent(object):
 
       if 0: # Check shape of prediction and target
          print("log_pi", log_pi.shape)
-         print("entropy", entropy.shape)
          print("v", v.shape)
          print("q", q.shape)
 
       # A2C losses
-      policy_loss = -log_pi*advant.detach() + self.ent_coef*entropy
+      policy_loss = -log_pi*advant.detach()
       vf_loss = F.mse_loss(v, q.detach())
 
       # Update value network parameter
@@ -93,10 +92,9 @@ class Agent(object):
       policy_loss.backward()
       self.policy_optimizer.step()
 
-      # Save losses & entropies
+      # Save losses
       self.policy_losses.append(policy_loss.item())
       self.vf_losses.append(vf_loss.item())
-      self.entropies.append(entropy.item())
 
    def run(self, max_step):
       step_number = 0
@@ -110,7 +108,7 @@ class Agent(object):
          self.steps += 1
          
          if self.eval_mode:
-            _, _, _, pi = self.policy(torch.Tensor(obs).to(self.device))
+            _, pi, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = pi.argmax().detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
@@ -132,5 +130,4 @@ class Agent(object):
       # Save total average losses
       self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
-      self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       return step_number, total_reward

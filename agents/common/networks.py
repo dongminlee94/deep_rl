@@ -58,8 +58,7 @@ class CategoricalPolicy(MLP):
         dist = Categorical(pi)
         action = dist.sample()
         log_pi = dist.log_prob(action).sum(dim=-1)
-        entropy = dist.entropy()
-        return action, log_pi, entropy, pi
+        return action, pi, log_pi
 
 
 """
@@ -96,8 +95,7 @@ class GaussianPolicy(MLP):
         dist = Normal(mu, std)
         pi = dist.sample()
         log_pi = dist.log_prob(pi).sum(dim=-1)
-        ent = dist.entropy().mean() 
-        return mu, pi, log_pi, ent
+        return mu, pi, log_pi, dist
 
 
 """

@@ -28,8 +28,8 @@ class Agent(object):
                 batch_size=64,
                 policy_lr=1e-4,
                 qf_lr=1e-3,
-                gradient_clip_ac=0.5,
-                gradient_clip_cr=1.0,
+                gradient_clip_policy=0.5,
+                gradient_clip_qf=1.0,
                 eval_mode=False,
                 policy_losses=list(),
                 qf_losses=list(),
@@ -51,8 +51,8 @@ class Agent(object):
       self.batch_size = batch_size
       self.policy_lr = policy_lr
       self.qf_lr = qf_lr
-      self.gradient_clip_ac = gradient_clip_ac
-      self.gradient_clip_cr = gradient_clip_cr
+      self.gradient_clip_policy = gradient_clip_policy
+      self.gradient_clip_qf = gradient_clip_qf
       self.eval_mode = eval_mode
       self.policy_losses = policy_losses
       self.qf_losses = qf_losses
@@ -120,13 +120,13 @@ class Agent(object):
       # Update Q-function network parameter
       self.qf_optimizer.zero_grad()
       qf_loss.backward()
-      nn.utils.clip_grad_norm_(self.qf.parameters(), self.gradient_clip_cr)
+      nn.utils.clip_grad_norm_(self.qf.parameters(), self.gradient_clip_qf)
       self.qf_optimizer.step()
       
       # Update policy network parameter
       self.policy_optimizer.zero_grad()
       policy_loss.backward()
-      nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip_ac)
+      nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip_policy)
       self.policy_optimizer.step()
 
       # Polyak averaging for target parameter
