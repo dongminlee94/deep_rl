@@ -121,10 +121,12 @@ class Agent(object):
             self.vf_optimizer.step()
 
             # Update policy network parameter
-            self.policy_optimizer.zero_grad()
-            policy_loss.backward()
-            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
-            self.policy_optimizer.step()
+            kl = (mini_log_pi_old - mini_log_pi).mean()
+            if kl <= 1.5 * 0.01:
+               self.policy_optimizer.zero_grad()
+               policy_loss.backward()
+               # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+               self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
       _, _, log_pi = self.policy(obs)
