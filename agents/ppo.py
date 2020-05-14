@@ -118,13 +118,13 @@ class Agent(object):
 
             # Update value network parameter
             self.vf_optimizer.zero_grad()
-            vf_loss.backward()
+            total_loss.backward()
             nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
             self.vf_optimizer.step()
 
             # Update policy network parameter
             self.policy_optimizer.zero_grad()
-            policy_loss.backward()
+            total_loss.backward()
             nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
             self.policy_optimizer.step()
 
