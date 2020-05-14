@@ -107,8 +107,8 @@ class Agent(object):
             _, _, mini_log_pi, _ = self.policy(mini_obs)
             mini_v = self.vf(mini_obs).squeeze(1)
 
-            print('mini_log_pi', mini_log_pi)
-            print('mini_v', mini_v)
+            print('mini_log_pi', mini_log_pi.shape)
+            print('mini_v', mini_v.shape)
 
             # PPO losses
             ratio = torch.exp(mini_log_pi - mini_log_pi_old)
