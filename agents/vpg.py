@@ -34,7 +34,6 @@ class Agent(object):
                 policy_losses=list(),
                 vf_losses=list(),
                 kls=list(),
-                entropies=list(),
                 logger=dict(),
    ):
 
@@ -56,7 +55,6 @@ class Agent(object):
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
       self.kls = kls
-      self.entropies = entropies
       self.logger = logger
 
       # Main network
@@ -73,47 +71,47 @@ class Agent(object):
    def train_model(self):
       batch = self.buffer.get()
       obs = batch['obs']
-      act = batch['act']
+      act = batch['act'].detach()
       ret = batch['ret']
       adv = batch['adv']
-      log_pi_old = batch['log_pi']
-
-      # Prediction logπ(s), V(s)
-      _, _, log_pi, ent = self.policy(obs)
-      v = self.vf(obs).squeeze(1)
+      log_pi_old = batch['log_pi'].detach()
       
-      if 0: # Check shape of experiences & predictions
+      if 0: # Check shape of experiences
          print("obs", obs.shape)
          print("act", act.shape)
          print("ret", ret.shape)
          print("adv", adv.shape)
          print("log_pi_old", log_pi_old.shape)
-         print("log_pi", log_pi.shape)
-         print("v", v.shape)
-
-      # VPG losses
-      policy_loss = -(log_pi_old*adv).mean()
-      vf_loss = F.mse_loss(v, ret)
 
       # Update value network parameter
       for _ in range(self.train_vf_iters):
+         # Prediction V(s)
+         v = self.vf(obs).squeeze(1)
+         # Value loss
+         vf_loss = F.mse_loss(v, ret)
+
          self.vf_optimizer.zero_grad()
          vf_loss.backward()
          self.vf_optimizer.step()
       
+      # Prediction logπ(s)
+      _, _, log_pi = self.policy(obs, act)
+      
+      # Policy loss
+      policy_loss = -(log_pi_old*adv).mean()
+
       # Update policy network parameter
       self.policy_optimizer.zero_grad()
       policy_loss.backward()
       self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
-      kl = (log_pi_old - log_pi).mean()     # a sample estimate for KL-divergence, easy to compute
+      approx_kl = (log_pi_old - log_pi).mean()     # a sample estimate for KL-divergence, easy to compute
 
       # Save losses
       self.policy_losses.append(policy_loss.item())
       self.vf_losses.append(vf_loss.item())
-      self.kls.append(kl.item())
-      self.entropies.append(ent.item())
+      self.kls.append(approx_kl.item())
 
    def run(self, max_step):
       step_number = 0
@@ -154,5 +152,4 @@ class Agent(object):
       self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
       self.logger['KL'] = round(np.mean(self.kls), 5)
-      self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       return step_number, total_reward

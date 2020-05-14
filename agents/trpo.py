@@ -38,7 +38,6 @@ class Agent(object):
                 policy_losses=list(),
                 vf_losses=list(),
                 kls=list(),
-                entropies=list(),
                 backtrack_iters=list(),
                 logger=dict(),
    ):
@@ -64,7 +63,6 @@ class Agent(object):
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
       self.kls = kls
-      self.entropies = entropies
       self.backtrack_iters = backtrack_iters
       self.logger = logger
 
@@ -155,14 +153,10 @@ class Agent(object):
    def train_model(self):
       batch = self.buffer.get()
       obs = batch['obs']
-      act = batch['act']
+      act = batch['act'].detach()
       ret = batch['ret']
       adv = batch['adv']
-      log_pi_old = batch['log_pi']
-
-      # Prediction logπ(s), V(s)
-      _, _, log_pi, ent = self.policy(obs)
-      v = self.vf(obs).squeeze(1)
+      log_pi_old = batch['log_pi'].detach()
       
       if 0: # Check shape of experiences & predictions
          print("obs", obs.shape)
@@ -170,19 +164,23 @@ class Agent(object):
          print("ret", ret.shape)
          print("adv", adv.shape)
          print("log_pi_old", log_pi_old.shape)
-         print("log_pi", log_pi.shape)
-         print("v", v.shape)
-   
-      # TRPO losses
-      ratio_old = torch.exp(log_pi - log_pi_old)
-      policy_loss_old = (ratio_old*adv).mean()
-      vf_loss = F.mse_loss(v, ret)
       
       # Update value network parameter
       for _ in range(self.train_vf_iters):
+         # Value loss
+         v = self.vf(obs).squeeze(1)
+         vf_loss = F.mse_loss(v, ret)
+
          self.vf_optimizer.zero_grad()
          vf_loss.backward()
          self.vf_optimizer.step()
+
+      # Prediction logπ(s), V(s)
+      _, _, log_pi = self.policy(obs, act)
+   
+      # Policy loss
+      ratio_old = torch.exp(log_pi - log_pi_old)
+      policy_loss_old = (ratio_old*adv).mean()
 
       # Symbols needed for CG solver
       gradient = torch.autograd.grad(policy_loss_old, self.policy.parameters())
@@ -209,7 +207,7 @@ class Agent(object):
             params = old_params + self.backtrack_coeff * step_size * search_dir
             self.update_model(self.policy, params)
 
-            _, _, log_pi, _ = self.policy(obs)
+            _, _, log_pi = self.policy(obs, act)
             ratio = torch.exp(log_pi - log_pi_old)
             policy_loss = (ratio*adv).mean()
 
@@ -237,7 +235,6 @@ class Agent(object):
       self.policy_losses.append(policy_loss_old.item())
       self.vf_losses.append(vf_loss.item())
       self.kls.append(kl.item())
-      self.entropies.append(ent.item())
 
    def run(self, max_step):
       step_number = 0
@@ -249,14 +246,14 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action, _, _, _ = self.policy(torch.Tensor(obs).to(self.device))
+            action, _, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, action, log_pi, _ = self.policy(torch.Tensor(obs).to(self.device))
+            _, action, log_pi = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
@@ -278,7 +275,6 @@ class Agent(object):
       self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
       self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
       self.logger['KL'] = round(np.mean(self.kls), 5)
-      self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       if self.args.algo == 'trpo':
          self.logger['BacktrackIters'] = np.mean(self.backtrack_iters)
       return step_number, total_reward

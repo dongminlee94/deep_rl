@@ -27,6 +27,7 @@ class Agent(object):
                 sample_size=2048,
                 mini_batch_size=64,
                 clip_param=0.2,
+                target_kl=0.01
                 policy_lr=3e-4,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
@@ -51,6 +52,7 @@ class Agent(object):
       self.sample_size = sample_size
       self.mini_batch_size = mini_batch_size
       self.clip_param = clip_param
+      self.target_kl = target_kl
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
       self.gradient_clip = gradient_clip
@@ -121,8 +123,8 @@ class Agent(object):
             self.vf_optimizer.step()
 
             # Update policy network parameter
-            kl = (mini_log_pi_old - mini_log_pi).mean()
-            if kl <= 1.5 * 0.01:
+            approx_kl = (mini_log_pi_old - mini_log_pi).mean()
+            if approx_kl <= 1.5 * self.target_kl:
                self.policy_optimizer.zero_grad()
                policy_loss.backward()
                # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
