@@ -66,8 +66,6 @@ class Agent(object):
       self.policy = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
       self.vf = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
-      # Concat the policy network parameter & the value network parameter to use one optim
-      # self.net_parameters = list(self.policy.parameters()) + list(self.vf.parameters())
       # Create optimizers
       self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
       self.vf_optimizer = optim.Adam(self.vf.parameters(), lr=self.vf_lr)
@@ -171,8 +169,6 @@ class Agent(object):
                self.buffer.finish_path()
                self.train_model()
                self.steps = 0
-               # Experience buffer
-               self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
 
          total_reward += reward
          step_number += 1

@@ -25,7 +25,7 @@ parser.add_argument('--max_step', type=int, default=200,
                     help='max episode step')
 parser.add_argument('--threshold_return', type=int, default=-215,
                     help='solved requirement for success in given environment')
-parser.add_argument('--tensorboard', type=bool, default=True)
+parser.add_argument('--tensorboard', type=bool, default=False)
 parser.add_argument('--gpu_index', type=int, default=0)
 args = parser.parse_args()
 device = torch.device('cuda', index=args.gpu_index) if torch.cuda.is_available() else torch.device('cpu')
@@ -69,16 +69,22 @@ def main():
 
     # Create an agent
     if args.algo == 'ddpg' or args.algo == 'td3':
-        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, act_noise=0.1)
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit)
     elif args.algo == 'sac':
-        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, alpha=0.7)
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
+                      alpha=0.7)
     elif args.algo == 'asac':
-        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, automatic_entropy_tuning=True)
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
+                      automatic_entropy_tuning=True)
     elif args.algo == 'tac':
-        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, log_type='log-q', entropic_index=1.5)
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
+                      log_type='log-q', 
+                      entropic_index=1.5)
     elif args.algo == 'atac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
-                        log_type='log-q', entropic_index=1.5, automatic_entropy_tuning=True)
+                      log_type='log-q', 
+                      entropic_index=1.5, 
+                      automatic_entropy_tuning=True)
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit)
 
