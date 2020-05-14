@@ -107,7 +107,7 @@ class Agent(object):
 
       # Value loss
       clip_v = v_old + torch.clamp(v-v_old, -self.clip_param, self.clip_param)
-      vf_loss = torch.max(F.mse_loss(v, ret), F.mse_loss(clip_v, ret))
+      vf_loss = torch.max(F.mse_loss(v, ret), F.mse_loss(clip_v, ret)).mean()
       return vf_loss
 
    def train_model(self):
