@@ -67,9 +67,10 @@ class Agent(object):
       self.vf = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
       # Concat the policy network parameter & the value network parameter to use one optim
-      self.net_parameters = list(self.policy.parameters()) + list(self.vf.parameters())
+      # self.net_parameters = list(self.policy.parameters()) + list(self.vf.parameters())
       # Create optimizers
-      self.net_optimizer = optim.Adam(self.net_parameters, lr=self.policy_lr)
+      self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
+      self.vf_optimizer = optim.Adam(self.vf.parameters(), lr=self.vf_lr)
       
       # Experience buffer
       self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
@@ -115,21 +116,21 @@ class Agent(object):
             policy_loss = -torch.min(ratio*mini_adv, clip_mini_adv).mean()
             
             clip_mini_v = mini_v_old + torch.clamp(mini_v-mini_v_old, -self.clip_param, self.clip_param)
-            vf_loss = 0.5 * torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clip_mini_v, mini_ret)).mean()
-
-            total_loss = policy_loss + 0.5 * vf_loss
+            vf_loss = torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clip_mini_v, mini_ret)).mean()
 
             # Update value network parameter
-            self.net_optimizer.zero_grad()
-            total_loss.backward()
-            nn.utils.clip_grad_norm_(self.net_parameters, self.gradient_clip)
-            self.net_optimizer.step()
+            self.vf_optimizer.zero_grad()
+            vf_loss.backward()
+            nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
+            self.vf_optimizer.step()
 
-            # # Update policy network parameter
-            # self.policy_optimizer.zero_grad()
-            # total_loss.backward()
-            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
-            # self.policy_optimizer.step()
+            # Update policy network parameter
+            self.policy_optimizer.zero_grad()
+            policy_loss.backward()
+            nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            self.policy_optimizer.step()
+
+      del self.buffer[:]
 
       # Info (useful to watch during learning)
       _, _, log_pi, dist = self.policy(obs)

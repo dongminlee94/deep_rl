@@ -86,7 +86,7 @@ class Buffer(object):
         return dict(obs=torch.Tensor(self.obs_buf).to(self.device),
                     act=torch.Tensor(self.act_buf).to(self.device),
                     ret=torch.Tensor(self.ret_buf).to(self.device),
-                    adv=torch.Tensor(self.adv_buf).squeeze(1).to(self.device),
+                    adv=torch.Tensor(self.adv_buf).to(self.device),
                     log_pi=torch.Tensor(self.log_pi_buf).to(self.device),
                     v=torch.Tensor(self.v_buf).to(self.device))
         
