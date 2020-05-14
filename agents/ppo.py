@@ -80,8 +80,8 @@ class Agent(object):
       act = batch['act']
       ret = batch['ret']
       adv = batch['adv']
-      log_pi_old = batch['log_pi'].detach()
-      v_old = batch['v'].detach()
+      log_pi_old = batch['log_pi']
+      v_old = batch['v']
 
       for _ in range(self.epoch):
          for _ in range(self.sample_size // self.mini_batch_size):
@@ -94,7 +94,7 @@ class Agent(object):
             mini_log_pi_old = log_pi_old[random_idxs].detach()
             mini_v_old = v_old[random_idxs].detach()
 
-            if 0: # Check shape of experiences & predictions with mini-batch size
+            if 1: # Check shape of experiences & predictions with mini-batch size
                print("random_idxs", random_idxs.shape)
                print("mini_obs", mini_obs.shape)
                print("mini_act", mini_act.shape)
@@ -106,6 +106,9 @@ class Agent(object):
             # Prediction logπ(s), V(s)
             _, _, mini_log_pi, _ = self.policy(mini_obs)
             mini_v = self.vf(mini_obs).squeeze(1)
+
+            print('mini_log_pi', mini_log_pi)
+            print('mini_v', mini_v)
 
             # PPO losses
             ratio = torch.exp(mini_log_pi - mini_log_pi_old)

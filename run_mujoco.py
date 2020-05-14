@@ -21,7 +21,7 @@ parser.add_argument('--steps_per_iter', type=int, default=5000,
                     help='steps of interaction for the agent and the environment in each epoch')
 parser.add_argument('--max_step', type=int, default=1000,
                     help='max episode step')
-parser.add_argument('--tensorboard', type=bool, default=True)
+parser.add_argument('--tensorboard', type=bool, default=False)
 parser.add_argument('--gpu_index', type=int, default=0)
 args = parser.parse_args()
 device = torch.device('cuda', index=args.gpu_index) if torch.cuda.is_available() else torch.device('cpu')
