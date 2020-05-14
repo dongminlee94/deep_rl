@@ -23,9 +23,10 @@ class Agent(object):
                 gamma=0.99,
                 lam=0.97,
                 hidden_sizes=(64,64),
-                sample_size=2000,
+                sample_size=2048,
                 mini_batch_size=64,
                 clip_param=0.2,
+                target_kl=0.01,
                 epoch=10,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
@@ -51,6 +52,7 @@ class Agent(object):
       self.sample_size = sample_size
       self.mini_batch_size = mini_batch_size
       self.clip_param = clip_param
+      self.target_kl = target_kl
       self.epoch = epoch
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
@@ -76,22 +78,22 @@ class Agent(object):
    def train_model(self):
       batch = self.buffer.get()
       obs = batch['obs']
-      act = batch['act']
+      act = batch['act'].detach()
       ret = batch['ret']
       adv = batch['adv']
-      log_pi_old = batch['log_pi']
+      log_pi_old = batch['log_pi'].detach()
       v_old = batch['v']
 
       for _ in range(self.epoch):
          for _ in range(self.sample_size // self.mini_batch_size):
             random_idxs = np.random.choice(self.sample_size, self.mini_batch_size)
             
-            mini_obs = obs[random_idxs,:].detach()
-            mini_act = act[random_idxs,:].detach()
-            mini_ret = ret[random_idxs].detach()
-            mini_adv = adv[random_idxs].detach()
-            mini_log_pi_old = log_pi_old[random_idxs].detach()
-            mini_v_old = v_old[random_idxs].detach()
+            mini_obs = obs[random_idxs,:]
+            mini_act = act[random_idxs,:]
+            mini_ret = ret[random_idxs]
+            mini_adv = adv[random_idxs]
+            mini_log_pi_old = log_pi_old[random_idxs]
+            mini_v_old = v_old[random_idxs]
 
             # Prediction logπ(s), V(s)
             _, _, mini_log_pi, _ = self.policy(mini_obs)
@@ -123,10 +125,12 @@ class Agent(object):
             self.vf_optimizer.step()
 
             # Update policy network parameter
-            self.policy_optimizer.zero_grad()
-            policy_loss.backward()
-            nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
-            self.policy_optimizer.step()
+            approx_kl = (mini_log_pi_old - mini_log_pi).mean()
+            if approx_kl <= 1.5 * self.target_kl:
+               self.policy_optimizer.zero_grad()
+               policy_loss.backward()
+               nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+               self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
       _, _, log_pi, dist = self.policy(obs)

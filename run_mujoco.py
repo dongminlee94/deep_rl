@@ -114,7 +114,7 @@ def main():
                       policy_lr=1e-3,
                       qf_lr=1e-3)
     else: # vpg, npg, trpo, ppo
-        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=4000)
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=4096)
 
     # Create a SummaryWriter object by TensorBoard
     if args.tensorboard:
