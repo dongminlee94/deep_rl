@@ -30,7 +30,7 @@ class Agent(object):
                 target_kl=0.01,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
-                gradient_clip=0.5
+                gradient_clip=0.5,
                 eval_mode=False,
                 policy_losses=list(),
                 vf_losses=list(),
