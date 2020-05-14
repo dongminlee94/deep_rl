@@ -23,11 +23,11 @@ class Agent(object):
                 gamma=0.99,
                 lam=0.97,
                 hidden_sizes=(64,64),
+                epochs=10,
                 sample_size=2048,
                 mini_batch_size=64,
                 clip_param=0.2,
                 target_kl=0.01,
-                epoch=10,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
@@ -49,11 +49,11 @@ class Agent(object):
       self.gamma = gamma
       self.lam = lam
       self.hidden_sizes = hidden_sizes
+      self.epochs = epochs
       self.sample_size = sample_size
       self.mini_batch_size = mini_batch_size
       self.clip_param = clip_param
       self.target_kl = target_kl
-      self.epoch = epoch
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
       self.gradient_clip = gradient_clip
@@ -79,12 +79,12 @@ class Agent(object):
       batch = self.buffer.get()
       obs = batch['obs']
       act = batch['act'].detach()
-      ret = batch['ret'].detach()
-      adv = batch['adv'].detach()
+      ret = batch['ret']
+      adv = batch['adv']
       log_pi_old = batch['log_pi'].detach()
       v_old = batch['v'].detach()
 
-      for _ in range(self.epoch):
+      for _ in range(self.epochs):
          for _ in range(self.sample_size // self.mini_batch_size):
             random_idxs = np.random.choice(self.sample_size, self.mini_batch_size)
             

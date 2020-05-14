@@ -93,7 +93,6 @@ class GaussianPolicy(MLP):
         std = torch.exp(log_std)
         
         dist = Normal(mu, std)
-
         if pi is None:
             pi = dist.sample()
         log_pi = dist.log_prob(pi).sum(dim=-1)
