@@ -76,7 +76,7 @@ def main():
     elif args.algo == 'sac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
                       start_steps=10000,                                
-                      alpha=0.05,                       # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
+                      alpha=0.2,                       # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
                       hidden_sizes=(256,256),           # shows the best performance in entropy coefficient 
                       buffer_size=int(1e6),             # while, in Humanoid-v2, SAC with 0.05 shows the best performance.
                       batch_size=256,
@@ -94,9 +94,9 @@ def main():
     elif args.algo == 'tac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
                       start_steps=10000,                                
-                      alpha=0.05,                                       
+                      alpha=0.2,                                       
                       log_type='log-q',                 # In HalfCheetah-v2 and Ant-v2, TAC with 1.5  
-                      entropic_index=1.2,               # shows the best performance in entropic index 
+                      entropic_index=1.5,               # shows the best performance in entropic index 
                       hidden_sizes=(256,256),           # while, in Humanoid-v2, TAC with 1.2 shows the best performance.
                       buffer_size=int(1e6), 
                       batch_size=256,
@@ -106,7 +106,7 @@ def main():
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       start_steps=10000, 
                       log_type='log-q', 
-                      entropic_index=1.2, 
+                      entropic_index=1.5, 
                       automatic_entropy_tuning=True,
                       hidden_sizes=(256,256), 
                       buffer_size=int(1e6), 
