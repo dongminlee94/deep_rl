@@ -118,8 +118,10 @@ def main():
 
     # Create a SummaryWriter object by TensorBoard
     if args.tensorboard:
-        dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) \
-                    + '_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        dir_name = 'runs/' + args.env + '/' \
+                           + args.algo \
+                           + '_s_' + str(args.seed) \
+                           + '_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
@@ -189,11 +191,10 @@ def main():
                 os.mkdir('./tests/save_model')
             
             ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo \
-                                                                            + '_s_' + str(args.seed) \
-                                                                            + '_i_' + str(i) \
-                                                                            + '_st_' + str(total_num_steps) \
-                                                                            + '_tr_' + str(round(train_average_return, 2)) \
-                                                                            + '_er_' + str(round(eval_average_return, 2)) + '.pt')
+                                                                      + '_s_' + str(args.seed) \
+                                                                      + '_i_' + str(i) \
+                                                                      + '_tr_' + str(round(train_average_return, 2)) \
+                                                                      + '_er_' + str(round(eval_average_return, 2)) + '.pt')
             
             torch.save(agent.policy.state_dict(), ckpt_path)
 

@@ -78,6 +78,7 @@ def main():
                       automatic_entropy_tuning=True)
     elif args.algo == 'tac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
+                      alpha=0.7,
                       log_type='log-q', 
                       entropic_index=1.5)
     elif args.algo == 'atac':
@@ -90,8 +91,10 @@ def main():
 
     # Create a SummaryWriter object by TensorBoard
     if args.tensorboard:
-        dir_name = 'runs/' + args.env + '/' + args.algo + '/' + str(args.seed) \
-                    + '_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        dir_name = 'runs/' + args.env + '/' \
+                           + args.algo \
+                           + '_s_' + str(args.seed) \
+                           + '_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
@@ -158,10 +161,10 @@ def main():
                     os.mkdir('./tests/save_model')
                 
                 ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo \
-                                                                                + '_s_' + str(args.seed) \
-                                                                                + '_ep_' + str(train_num_episodes) \
-                                                                                + '_tr_' + str(round(train_average_return, 2)) \
-                                                                                + '_er_' + str(round(eval_average_return, 2)) + '.pt')
+                                                                          + '_s_' + str(args.seed) \
+                                                                          + '_ep_' + str(train_num_episodes) \
+                                                                          + '_tr_' + str(round(train_average_return, 2)) \
+                                                                          + '_er_' + str(round(eval_average_return, 2)) + '.pt')
                 
                 torch.save(agent.policy.state_dict(), ckpt_path)
 
