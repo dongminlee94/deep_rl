@@ -28,7 +28,7 @@ class Agent(object):
                 lam=0.97,
                 delta=1e-2,
                 hidden_sizes=(64,64),
-                sample_size=2000,
+                sample_size=2048,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
                 train_vf_iters=80,

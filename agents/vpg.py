@@ -26,7 +26,7 @@ class Agent(object):
                 gamma=0.99,
                 lam=0.97,
                 hidden_sizes=(64,64),
-                sample_size=2000,
+                sample_size=2048,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
@@ -107,6 +107,7 @@ class Agent(object):
       # Update policy network parameter
       self.policy_optimizer.zero_grad()
       policy_loss.backward()
+      nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
       self.policy_optimizer.step()
 
       # A sample estimate for KL-divergence, easy to compute
