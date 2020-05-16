@@ -81,7 +81,7 @@ def main():
                       buffer_size=int(1e6),             # while, in Humanoid-v2, SAC with 0.05 shows the best performance.
                       batch_size=256,
                       policy_lr=3e-4, 
-                      qf_lr=3e-4)     
+                      qf_lr=1e-3)     
     elif args.algo == 'asac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       start_steps=10000, 
@@ -90,7 +90,7 @@ def main():
                       buffer_size=int(1e6), 
                       batch_size=256,
                       policy_lr=3e-4,
-                      qf_lr=3e-4)
+                      qf_lr=1e-3)
     elif args.algo == 'tac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
                       start_steps=10000,                                
@@ -101,7 +101,7 @@ def main():
                       buffer_size=int(1e6), 
                       batch_size=256,
                       policy_lr=3e-4,
-                      qf_lr=3e-4)
+                      qf_lr=1e-3)
     elif args.algo == 'atac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       start_steps=10000, 
@@ -112,7 +112,7 @@ def main():
                       buffer_size=int(1e6), 
                       batch_size=256,
                       policy_lr=3e-4,
-                      qf_lr=3e-4)
+                      qf_lr=1e-3)
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=4096)
 
