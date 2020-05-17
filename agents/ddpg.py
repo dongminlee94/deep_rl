@@ -26,7 +26,7 @@ class Agent(object):
                 hidden_sizes=(128,128),
                 buffer_size=int(1e4),
                 batch_size=64,
-                policy_lr=1e-4,
+                policy_lr=3e-4,
                 qf_lr=1e-3,
                 gradient_clip_policy=0.5,
                 gradient_clip_qf=1.0,
