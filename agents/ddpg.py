@@ -20,7 +20,8 @@ class Agent(object):
                 act_dim,
                 act_limit,
                 steps=0,
-                start_steps=2000,
+                expl_before=2000,
+                train_after=1000,
                 gamma=0.99,
                 act_noise=0.1,
                 hidden_sizes=(128,128),
@@ -43,7 +44,8 @@ class Agent(object):
       self.act_dim = act_dim
       self.act_limit = act_limit
       self.steps = steps 
-      self.start_steps = start_steps
+      self.expl_before = expl_before
+      self.train_after = train_after
       self.gamma = gamma
       self.act_noise = act_noise
       self.hidden_sizes = hidden_sizes
@@ -153,10 +155,10 @@ class Agent(object):
          else:
             self.steps += 1
 
-            # Until start_steps have elapsed, randomly sample actions 
+            # Until expl_before have elapsed, randomly sample actions 
             # from a uniform distribution for better exploration. 
             # Afterwards, use the learned policy.
-            if self.steps > self.start_steps:
+            if self.steps > self.expl_before:
                action = self.select_action(torch.Tensor(obs).to(self.device))
             else:
                action = self.env.action_space.sample()
@@ -168,7 +170,7 @@ class Agent(object):
             self.replay_buffer.add(obs, action, reward, next_obs, done)
             
             # Start training when the number of experience is greater than batch size
-            if self.steps > self.batch_size:
+            if self.steps > self.train_after:
                self.train_model()
 
          total_reward += reward
