@@ -66,52 +66,52 @@ def main():
     # Create an agent
     if args.algo == 'ddpg' or args.algo == 'td3':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
-                      expl_before=10000, 
+                      expl_before=0, 
                       act_noise=0.1, 
                       hidden_sizes=(256,256), 
                       buffer_size=int(1e6), 
                       batch_size=256,
-                      policy_lr=3e-4, 
+                      policy_lr=1e-3, 
                       qf_lr=1e-3)
     elif args.algo == 'sac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
-                      expl_before=10000,                                
-                      alpha=0.2,                       # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
+                      expl_before=0,                                
+                      alpha=0.2,                        # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
                       hidden_sizes=(256,256),           # shows the best performance in entropy coefficient 
                       buffer_size=int(1e6),             # while, in Humanoid-v2, SAC with 0.05 shows the best performance.
                       batch_size=256,
-                      policy_lr=3e-4, 
+                      policy_lr=1e-3, 
                       qf_lr=1e-3)     
     elif args.algo == 'asac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
-                      expl_before=10000, 
+                      expl_before=0, 
                       automatic_entropy_tuning=True, 
                       hidden_sizes=(256,256), 
                       buffer_size=int(1e6), 
                       batch_size=256,
-                      policy_lr=3e-4,
+                      policy_lr=1e-3,
                       qf_lr=1e-3)
     elif args.algo == 'tac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
-                      expl_before=10000,                                
+                      expl_before=0,                                
                       alpha=0.2,                                       
                       log_type='log-q',                 # In HalfCheetah-v2 and Ant-v2, TAC with 1.5  
                       entropic_index=1.5,               # shows the best performance in entropic index 
                       hidden_sizes=(256,256),           # while, in Humanoid-v2, TAC with 1.2 shows the best performance.
                       buffer_size=int(1e6), 
                       batch_size=256,
-                      policy_lr=3e-4,
+                      policy_lr=1e-3,
                       qf_lr=1e-3)
     elif args.algo == 'atac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
-                      expl_before=10000, 
+                      expl_before=0, 
                       log_type='log-q', 
                       entropic_index=1.5, 
                       automatic_entropy_tuning=True,
                       hidden_sizes=(256,256), 
                       buffer_size=int(1e6), 
                       batch_size=256,
-                      policy_lr=3e-4,
+                      policy_lr=1e-3,
                       qf_lr=1e-3)
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=4096)
