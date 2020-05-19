@@ -72,7 +72,7 @@ def main():
                       buffer_size=int(1e6), 
                       batch_size=256,
                       policy_lr=3e-4, 
-                      qf_lr=1e-3)
+                      qf_lr=3e-4)
     elif args.algo == 'sac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
                       expl_before=10000,                                
@@ -81,7 +81,7 @@ def main():
                       buffer_size=int(1e6),             # while, in Humanoid-v2, SAC with 0.05 shows the best performance.
                       batch_size=256,
                       policy_lr=3e-4, 
-                      qf_lr=1e-3)     
+                      qf_lr=3e-4)     
     elif args.algo == 'asac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       expl_before=10000, 
@@ -90,7 +90,7 @@ def main():
                       buffer_size=int(1e6), 
                       batch_size=256,
                       policy_lr=3e-4,
-                      qf_lr=1e-3)
+                      qf_lr=3e-4)
     elif args.algo == 'tac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
                       expl_before=10000,                                
@@ -101,7 +101,7 @@ def main():
                       buffer_size=int(1e6), 
                       batch_size=256,
                       policy_lr=3e-4,
-                      qf_lr=1e-3)
+                      qf_lr=3e-4)
     elif args.algo == 'atac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       expl_before=10000, 
@@ -112,7 +112,7 @@ def main():
                       buffer_size=int(1e6), 
                       batch_size=256,
                       policy_lr=3e-4,
-                      qf_lr=1e-3)
+                      qf_lr=3e-4)
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=4096)
 
@@ -121,7 +121,7 @@ def main():
         dir_name = 'runs/' + args.env + '/' \
                            + args.algo \
                            + '_s_' + str(args.seed) \
-                           + '_plr_3e-4_qlr_1e-3_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+                           + '_plr_3e-4_qlr_3e-4_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
