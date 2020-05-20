@@ -96,7 +96,7 @@ def main():
                       expl_before=10000,                                
                       alpha=0.2,                                       
                       log_type='log-q',                 # In HalfCheetah-v2 and Ant-v2, TAC with 1.5  
-                      entropic_index=1.2,               # shows the best performance in entropic index 
+                      entropic_index=0.7,               # shows the best performance in entropic index 
                       hidden_sizes=(256,256),           # while, in Humanoid-v2, TAC with 1.2 shows the best performance.
                       buffer_size=int(1e6), 
                       batch_size=256,
@@ -121,7 +121,7 @@ def main():
         dir_name = 'runs/' + args.env + '/' \
                            + args.algo \
                            + '_s_' + str(args.seed) \
-                           + '_e_1.2_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+                           + '_e_0.7_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
