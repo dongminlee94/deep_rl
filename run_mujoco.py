@@ -76,7 +76,7 @@ def main():
     elif args.algo == 'sac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
                       expl_before=10000,                                
-                      alpha=0.2,                        # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
+                      alpha=0.3,                        # In HalfCheetah-v2 and Ant-v2, SAC with 0.2  
                       hidden_sizes=(256,256),           # shows the best performance in entropy coefficient 
                       buffer_size=int(1e6),             # while, in Humanoid-v2, SAC with 0.05 shows the best performance.
                       batch_size=256,
