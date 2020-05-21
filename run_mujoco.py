@@ -95,9 +95,9 @@ def main():
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
                       expl_before=10000,                                
                       alpha=0.2,                                       
-                      log_type='log-q',                 # In HalfCheetah-v2 and Ant-v2, TAC with 1.5  
-                      entropic_index=0.5,               # shows the best performance in entropic index 
-                      hidden_sizes=(256,256),           # while, in Humanoid-v2, TAC with 1.2 shows the best performance.
+                      log_type='log-q',                 
+                      entropic_index=1.2,               
+                      hidden_sizes=(256,256),          
                       buffer_size=int(1e6), 
                       batch_size=256,
                       policy_lr=3e-4,
@@ -106,7 +106,7 @@ def main():
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       expl_before=10000, 
                       log_type='log-q', 
-                      entropic_index=1.5, 
+                      entropic_index=1.2, 
                       automatic_entropy_tuning=True,
                       hidden_sizes=(256,256), 
                       buffer_size=int(1e6), 
@@ -121,7 +121,7 @@ def main():
         dir_name = 'runs/' + args.env + '/' \
                            + args.algo \
                            + '_s_' + str(args.seed) \
-                           + '_e_0.5_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+                           + '_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
