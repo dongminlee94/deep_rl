@@ -106,13 +106,13 @@ def main():
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       expl_before=10000, 
                       log_type='log-q', 
-                      entropic_index=1.5, 
+                      entropic_index=1.2, 
                       automatic_entropy_tuning=True,
                       hidden_sizes=(256,256), 
                       buffer_size=int(1e6), 
                       batch_size=256,
-                      policy_lr=1e-3,
-                      qf_lr=1e-3)
+                      policy_lr=3e-4,
+                      qf_lr=3e-4)
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=4096)
 
