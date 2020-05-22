@@ -11,8 +11,8 @@ from agents.common.networks import *
 
 class Agent(object):
    """
-   An implementation of Soft Actor-Critic (SAC), Automatic entropy adjustment SAC (ASAC), 
-   Tsallis Actor-Critic (TAC) and Automatic entropy adjustment TAC (ATAC) agents.
+   An implementation of agents for Soft Actor-Critic (SAC), Automatic entropy adjustment on SAC (ASAC), 
+   Tsallis Actor-Critic (TAC) and Automatic entropy adjustment on TAC (ATAC).
    """
 
    def __init__(self,
