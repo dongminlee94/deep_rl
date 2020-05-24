@@ -71,8 +71,8 @@ def main():
                       hidden_sizes=(256,256), 
                       buffer_size=int(1e6), 
                       batch_size=256,
-                      policy_lr=1e-3, 
-                      qf_lr=1e-3)
+                      policy_lr=3e-4, 
+                      qf_lr=3e-4)
     elif args.algo == 'sac':                                                                                    
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit,                   
                       expl_before=10000,                                
@@ -121,7 +121,7 @@ def main():
         dir_name = 'runs/' + args.env + '/' \
                            + args.algo \
                            + '_s_' + str(args.seed) \
-                           + '_plr_1e-3_qlr_1e-3_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+                           + '_plr_3e-4_qlr_3e-4_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
