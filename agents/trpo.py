@@ -21,7 +21,7 @@ class Agent(object):
                 args,
                 device,
                 obs_dim,
-                act_dimvf
+                act_dim,
                 act_limit,
                 steps=0,
                 gamma=0.99,
