@@ -27,7 +27,7 @@ class Agent(object):
                 sample_size=2048,
                 mini_batch_size=64,
                 clip_param=0.2,
-                target_kl=0.01
+                target_kl=0.01,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
