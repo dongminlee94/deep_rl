@@ -96,7 +96,7 @@ class GaussianPolicy(MLP):
         if pi is None:
             pi = dist.sample()
         log_pi = dist.log_prob(pi).sum(dim=-1)
-        return mu, pi, log_pi
+        return mu, std, pi, log_pi
 
 
 """

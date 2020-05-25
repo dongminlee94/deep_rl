@@ -99,7 +99,7 @@ class Agent(object):
          self.vf_optimizer.step()
       
       # Prediction logπ(s)
-      _, _, log_pi = self.policy(obs, act)
+      _, _, _, log_pi = self.policy(obs, act)
       
       # Policy loss
       policy_loss = -(log_pi_old*adv).mean()
@@ -135,7 +135,7 @@ class Agent(object):
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, action, log_pi, _ = self.policy(torch.Tensor(obs).to(self.device))
+            _, _, action, log_pi = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 

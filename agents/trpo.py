@@ -114,10 +114,9 @@ class Agent(object):
       return kl_hessian + p * damping_coeff
    
    def gaussian_kl(self, old_policy, new_policy, obs):
-      mu_old, _, _ = old_policy(obs)
-      mu_old = mu_old.detach()
-      mu, _, _ = new_policy(obs)
-      std_old, std = 1, 1
+      mu_old, std_old, _, _ = old_policy(obs)
+      mu_old, std_old = mu_old.detach(), std_old.detach()
+      mu, std, _, _ = new_policy(obs)
 
       # kl divergence between old policy and new policy : D( pi_old || pi_new )
       # (https://stats.stackexchange.com/questions/7440/kl-divergence-between-two-univariate-gaussians)
@@ -182,7 +181,7 @@ class Agent(object):
          self.vf_optimizer.step()
 
       # Prediction logπ(s)
-      _, _, log_pi = self.policy(obs, act)
+      _, _, _, log_pi = self.policy(obs, act)
    
       # Policy loss
       ratio_old = torch.exp(log_pi - log_pi_old)
@@ -213,7 +212,7 @@ class Agent(object):
             params = old_params + self.backtrack_coeff * step_size * search_dir
             self.update_model(self.policy, params)
 
-            _, _, log_pi = self.policy(obs, act)
+            _, _, _, log_pi = self.policy(obs, act)
             ratio = torch.exp(log_pi - log_pi_old)
             policy_loss = (ratio*adv).mean()
 
@@ -252,14 +251,14 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action, _, _ = self.policy(torch.Tensor(obs).to(self.device))
+            action, _, _, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, action, log_pi = self.policy(torch.Tensor(obs).to(self.device))
+            _, _, action, log_pi = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 

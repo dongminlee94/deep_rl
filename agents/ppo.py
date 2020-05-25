@@ -94,7 +94,7 @@ class Agent(object):
             mini_v_old = v_old[random_idxs]
 
             # Prediction logπ(s), V(s)
-            _, _, mini_log_pi = self.policy(mini_obs, mini_act)
+            _, _, _, mini_log_pi = self.policy(mini_obs, mini_act)
             mini_v = self.vf(mini_obs).squeeze(1)
 
             if 0: # Check shape of experiences & predictions with mini-batch size
@@ -133,7 +133,7 @@ class Agent(object):
                self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
-      _, _, log_pi = self.policy(obs)
+      _, _, _, log_pi = self.policy(obs)
       kl = (log_pi_old - log_pi).mean()
       
       # Save losses
@@ -151,14 +151,14 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action, _, _ = self.policy(torch.Tensor(obs).to(self.device))
+            action, _, _, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, action, log_pi = self.policy(torch.Tensor(obs).to(self.device))
+            _, _, action, log_pi = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
