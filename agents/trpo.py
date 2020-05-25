@@ -114,9 +114,10 @@ class Agent(object):
       return kl_hessian + p * damping_coeff
    
    def gaussian_kl(self, old_policy, new_policy, obs):
-      mu_old, std_old, _, _ = old_policy(obs)
-      mu_old, std_old = mu_old.detach(), std_old.detach()
-      mu, std, _, _ = new_policy(obs)
+      mu_old, _, _ = old_policy(obs)
+      mu_old = mu_old.detach()
+      mu, _, _ = new_policy(obs)
+      std_old, std = 1, 1
 
       # kl divergence between old policy and new policy : D( pi_old || pi_new )
       # (https://stats.stackexchange.com/questions/7440/kl-divergence-between-two-univariate-gaussians)
