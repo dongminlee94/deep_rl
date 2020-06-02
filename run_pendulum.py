@@ -80,7 +80,7 @@ def main():
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       alpha=0.5,
                       log_type='log-q', 
-                      entropic_index=1.2)
+                      entropic_index=1.5)
     elif args.algo == 'atac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       log_type='log-q', 
@@ -94,7 +94,7 @@ def main():
         dir_name = 'runs/' + args.env + '/' \
                            + args.algo \
                            + '_s_' + str(args.seed) \
-                           + '_e_1.2_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+                           + '_e_1.5_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
