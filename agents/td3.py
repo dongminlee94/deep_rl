@@ -31,7 +31,7 @@ class Agent(object):
                 buffer_size=int(1e4),
                 batch_size=64,
                 policy_lr=3e-4,
-                qf_lr=1e-3,
+                qf_lr=3e-4,
                 eval_mode=False,
                 policy_losses=list(),
                 qf_losses=list(),
