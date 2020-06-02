@@ -23,7 +23,7 @@ parser.add_argument('--evaluation_eps', type=int, default=100,
                     help='evaluation episode number')
 parser.add_argument('--max_step', type=int, default=200,
                     help='max episode step')
-parser.add_argument('--threshold_return', type=int, default=-215,
+parser.add_argument('--threshold_return', type=int, default=-2,
                     help='solved requirement for success in given environment')
 parser.add_argument('--tensorboard', type=bool, default=False)
 parser.add_argument('--gpu_index', type=int, default=0)
@@ -72,7 +72,7 @@ def main():
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit)
     elif args.algo == 'sac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
-                      alpha=0.7)
+                      alpha=0.1)
     elif args.algo == 'asac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       automatic_entropy_tuning=True)
@@ -94,7 +94,7 @@ def main():
         dir_name = 'runs/' + args.env + '/' \
                            + args.algo \
                            + '_s_' + str(args.seed) \
-                           + '_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+                           + '_a_0.1_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
