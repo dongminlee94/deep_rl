@@ -80,11 +80,11 @@ def main():
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       alpha=0.5,
                       log_type='log-q', 
-                      entropic_index=0.5)
+                      entropic_index=1.2)
     elif args.algo == 'atac':
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, 
                       log_type='log-q', 
-                      entropic_index=1.5, 
+                      entropic_index=1.2, 
                       automatic_entropy_tuning=True)
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit)
@@ -94,7 +94,7 @@ def main():
         dir_name = 'runs/' + args.env + '/' \
                            + args.algo \
                            + '_s_' + str(args.seed) \
-                           + '_e_0.5_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+                           + '_t_' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         writer = SummaryWriter(log_dir=dir_name)
 
     start_time = time.time()
