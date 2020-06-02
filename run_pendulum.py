@@ -25,7 +25,7 @@ parser.add_argument('--max_step', type=int, default=200,
                     help='max episode step')
 parser.add_argument('--threshold_return', type=int, default=-2,
                     help='solved requirement for success in given environment')
-parser.add_argument('--tensorboard', type=bool, default=False)
+parser.add_argument('--tensorboard', type=bool, default=True)
 parser.add_argument('--gpu_index', type=int, default=0)
 args = parser.parse_args()
 device = torch.device('cuda', index=args.gpu_index) if torch.cuda.is_available() else torch.device('cpu')
