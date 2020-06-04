@@ -23,17 +23,17 @@ class Agent(object):
                 gamma=0.99,
                 lam=0.97,
                 hidden_sizes=(64,64),
-                sample_size=2000,
+                epochs=10,
+                sample_size=2048,
                 mini_batch_size=64,
-                actor_lr=1e-3,
-                critic_lr=1e-3,
                 clip_param=0.2,
-                epoch=10,
+                policy_lr=3e-4,
+                vf_lr=1e-3,
+                gradient_clip=0.5,
                 eval_mode=False,
-                actor_losses=list(),
-                critic_losses=list(),
+                policy_losses=list(),
+                vf_losses=list(),
                 kls=list(),
-                entropies=list(),
                 logger=dict(),
    ):
 
@@ -47,26 +47,26 @@ class Agent(object):
       self.gamma = gamma
       self.lam = lam
       self.hidden_sizes = hidden_sizes
+      self.epochs = epochs
       self.sample_size = sample_size
       self.mini_batch_size = mini_batch_size
-      self.actor_lr = actor_lr
-      self.critic_lr = critic_lr
       self.clip_param = clip_param
-      self.epoch = epoch
+      self.policy_lr = policy_lr
+      self.vf_lr = vf_lr
+      self.gradient_clip = gradient_clip
       self.eval_mode = eval_mode
-      self.actor_losses = actor_losses
-      self.critic_losses = critic_losses
+      self.policy_losses = policy_losses
+      self.vf_losses = vf_losses
       self.kls = kls
-      self.entropies = entropies
       self.logger = logger
 
       # Main network
-      self.actor = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
-      self.critic = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
+      self.policy = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
+      self.vf = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
       # Create optimizers
-      self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
-      self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
+      self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=self.policy_lr)
+      self.vf_optimizer = optim.Adam(self.vf.parameters(), lr=self.vf_lr)
       
       # Experience buffer
       self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
@@ -77,23 +77,15 @@ class Agent(object):
       act = batch['act']
       ret = batch['ret']
       adv = batch['adv']
+      # log_pi_old = batch['log_pi'].detach()
+      # v_old = batch['v'].detach()
 
-      # Prediction logπ_old(s), logπ(s), V(s)
-      _, _, dist_old, _ = self.actor(obs)
-      log_pi_old = dist_old.log_prob(act)
+      _, _, _, log_pi_old = self.policy(obs, act)
       log_pi_old = log_pi_old.detach()
-      v_old = self.critic(obs).squeeze(1)
+      v_old = self.vf(obs).squeeze(1)
       v_old = v_old.detach()
 
-      if 0: # Check shape of experiences & predictions
-         print("obs", obs.shape)
-         print("act", act.shape)
-         print("ret", ret.shape)
-         print("adv", adv.shape)
-         print("log_pi_old", log_pi_old.shape)
-         print("v_old", v_old.shape)
-
-      for _ in range(self.epoch):
+      for _ in range(self.epochs):
          for _ in range(self.sample_size // self.mini_batch_size):
             random_idxs = np.random.choice(self.sample_size, self.mini_batch_size)
             
@@ -104,6 +96,10 @@ class Agent(object):
             mini_log_pi_old = log_pi_old[random_idxs]
             mini_v_old = v_old[random_idxs]
 
+            # Prediction logπ(s), V(s)
+            _, _, _, mini_log_pi = self.policy(mini_obs, mini_act)
+            mini_v = self.vf(mini_obs).squeeze(1)
+
             if 0: # Check shape of experiences & predictions with mini-batch size
                print("random_idxs", random_idxs.shape)
                print("mini_obs", mini_obs.shape)
@@ -111,47 +107,40 @@ class Agent(object):
                print("mini_ret", mini_ret.shape)
                print("mini_adv", mini_adv.shape)
                print("mini_log_pi_old", mini_log_pi_old.shape)
+               print('mini_log_pi', mini_log_pi.shape)
                print("mini_v_old", mini_v_old.shape)
-
-            _, _, dist, _ = self.actor(mini_obs)
-            mini_log_pi = dist.log_prob(mini_act)
-            mini_v = self.critic(mini_obs).squeeze(1)
+               print('mini_v', mini_v.shape)
 
             # PPO losses
             ratio = torch.exp(mini_log_pi - mini_log_pi_old)
-            clipped_ratio = (
-               torch.clamp(ratio, 1.-self.clip_param, 1.+self.clip_param)*mini_adv
-            )
-            actor_loss = -torch.min(ratio*mini_adv, clipped_ratio).mean()
+            clip_mini_adv = (torch.clamp(ratio, 1.-self.clip_param, 1.+self.clip_param)*mini_adv)
+            policy_loss = -torch.min(ratio*mini_adv, clip_mini_adv).mean()
             
-            clipped_value = mini_v_old + torch.clamp(
-               mini_v-mini_v_old, -self.clip_param, self.clip_param
-            )
-            critic_loss = torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clipped_value, mini_ret))
-            
-            total_loss = actor_loss + 0.5 * critic_loss
+            clip_mini_v = mini_v_old + torch.clamp(mini_v-mini_v_old, -self.clip_param, self.clip_param)
+            vf_loss = torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clip_mini_v, mini_ret)).mean()
 
-            # Update critic network parameter
-            self.critic_optimizer.zero_grad()
+            total_loss = policy_loss + 0.5 * vf_loss
+
+            # Update value network parameter
+            self.vf_optimizer.zero_grad()
             total_loss.backward(retain_graph=True)
-            self.critic_optimizer.step()
-
-            # Update actor network parameter
-            self.actor_optimizer.zero_grad()
+            # nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
+            self.vf_optimizer.step()
+            
+            # Update policy network parameter
+            self.policy_optimizer.zero_grad()
             total_loss.backward()
-            self.actor_optimizer.step()
+            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
-      _, _, dist, _ = self.actor(obs)
-      log_pi = dist.log_prob(act)
-      approx_kl = (log_pi_old - log_pi).mean()     # a sample estimate for KL-divergence, easy to compute
-      approx_ent = dist.entropy().mean()           # a sample estimate for entropy, also easy to compute
-
+      _, _, _, log_pi = self.policy(obs)
+      approx_kl = (log_pi_old - log_pi).mean()     # A sample estimate for KL-divergence, easy to compute
+      
       # Save losses
-      self.actor_losses.append(actor_loss.item())
-      self.critic_losses.append(critic_loss.item())
+      self.policy_losses.append(policy_loss.item())
+      self.vf_losses.append(vf_loss.item())
       self.kls.append(approx_kl.item())
-      self.entropies.append(approx_ent.item())
 
    def run(self, max_step):
       step_number = 0
@@ -163,20 +152,20 @@ class Agent(object):
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
          if self.eval_mode:
-            action, _, _, _ = self.actor(torch.Tensor(obs).to(self.device))
+            action, _, _, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, _, _, action = self.actor(torch.Tensor(obs).to(self.device))
+            _, _, action, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to buffer
-            val = self.critic(torch.Tensor(obs).to(self.device))
-            self.buffer.add(obs, action, reward, done, val)
+            v = self.vf(torch.Tensor(obs).to(self.device))
+            self.buffer.add(obs, action, reward, done, v)
             
             # Start training when the number of experience is equal to sample size
             if self.steps == self.sample_size:
@@ -189,8 +178,7 @@ class Agent(object):
          obs = next_obs
       
       # Save logs
-      self.logger['LossPi'] = round(np.mean(self.actor_losses), 5)
-      self.logger['LossV'] = round(np.mean(self.critic_losses), 5)
+      self.logger['LossPi'] = round(np.mean(self.policy_losses), 5)
+      self.logger['LossV'] = round(np.mean(self.vf_losses), 5)
       self.logger['KL'] = round(np.mean(self.kls), 5)
-      self.logger['Entropy'] = round(np.mean(self.entropies), 5)
       return step_number, total_reward
