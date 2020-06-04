@@ -117,17 +117,17 @@ class Agent(object):
             clip_mini_v = mini_v_old + torch.clamp(mini_v-mini_v_old, -self.clip_param, self.clip_param)
             vf_loss = torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clip_mini_v, mini_ret)).mean()
 
-            # total_loss = policy_loss + 0.5 * vf_loss
+            total_loss = policy_loss + 0.5 * vf_loss
 
             # Update value network parameter
             self.vf_optimizer.zero_grad()
-            vf_loss.backward()
+            total_loss.backward()
             # nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
             self.vf_optimizer.step()
             
             # Update policy network parameter
             self.policy_optimizer.zero_grad()
-            policy_loss.backward()
+            total_loss.backward()
             # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
             self.policy_optimizer.step()
 
