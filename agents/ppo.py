@@ -77,11 +77,8 @@ class Agent(object):
       act = batch['act']
       ret = batch['ret']
       adv = batch['adv']
-      # log_pi_old = batch['log_pi'].detach()
-      # v_old = batch['v'].detach()
-
+      
       _, _, _, log_pi_old = self.policy(obs, act)
-      # log_pi_old = dist_old.log_prob(act).sum(dim=-1)
       log_pi_old = log_pi_old.detach()
       v_old = self.vf(obs).squeeze(1)
       v_old = v_old.detach()
@@ -99,10 +96,9 @@ class Agent(object):
 
             # Prediction logπ(s), V(s)
             _, _, _, mini_log_pi = self.policy(mini_obs, mini_act)
-            # mini_log_pi = dist.log_prob(mini_act).sum(dim=-1)
             mini_v = self.vf(mini_obs).squeeze(1)
 
-            if 1: # Check shape of experiences & predictions with mini-batch size
+            if 0: # Check shape of experiences & predictions with mini-batch size
                print("random_idxs", random_idxs.shape)
                print("mini_obs", mini_obs.shape)
                print("mini_act", mini_act.shape)
@@ -121,23 +117,22 @@ class Agent(object):
             clip_mini_v = mini_v_old + torch.clamp(mini_v-mini_v_old, -self.clip_param, self.clip_param)
             vf_loss = torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clip_mini_v, mini_ret)).mean()
 
-            total_loss = policy_loss + 0.5 * vf_loss
+            # total_loss = policy_loss + 0.5 * vf_loss
 
             # Update value network parameter
             self.vf_optimizer.zero_grad()
-            total_loss.backward(retain_graph=True)
+            vf_loss.backward()
             # nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
             self.vf_optimizer.step()
             
             # Update policy network parameter
             self.policy_optimizer.zero_grad()
-            total_loss.backward()
+            policy_loss.backward()
             # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
             self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
       _, _, _, log_pi = self.policy(obs, act)
-      # log_pi = dist.log_prob(act).sum(dim=-1)
       approx_kl = (log_pi_old - log_pi).mean()     # A sample estimate for KL-divergence, easy to compute
       
       # Save losses
