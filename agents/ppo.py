@@ -102,7 +102,7 @@ class Agent(object):
             mini_log_pi = dist.log_prob(mini_act).sum(dim=-1)
             mini_v = self.vf(mini_obs).squeeze(1)
 
-            if 0: # Check shape of experiences & predictions with mini-batch size
+            if 1: # Check shape of experiences & predictions with mini-batch size
                print("random_idxs", random_idxs.shape)
                print("mini_obs", mini_obs.shape)
                print("mini_act", mini_act.shape)
