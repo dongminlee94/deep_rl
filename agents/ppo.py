@@ -80,7 +80,7 @@ class Agent(object):
       # log_pi_old = batch['log_pi'].detach()
       # v_old = batch['v'].detach()
 
-      _, _, _, log_pi_old = self.policy(obs)
+      _, _, _, log_pi_old = self.policy(obs, act)
       log_pi_old = log_pi_old.detach()
       v_old = self.vf(obs).squeeze(1)
       v_old = v_old.detach()
