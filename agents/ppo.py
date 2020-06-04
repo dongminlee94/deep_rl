@@ -27,7 +27,7 @@ class Agent(object):
                 sample_size=2048,
                 mini_batch_size=64,
                 clip_param=0.2,
-                policy_lr=1e-3,
+                policy_lr=3e-4,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
                 eval_mode=False,
@@ -74,7 +74,7 @@ class Agent(object):
    def train_model(self):
       batch = self.buffer.get()
       obs = batch['obs']
-      act = batch['act'].detach()
+      act = batch['act']
       ret = batch['ret']
       adv = batch['adv']
       log_pi_old = batch['log_pi'].detach()
@@ -114,16 +114,18 @@ class Agent(object):
             clip_mini_v = mini_v_old + torch.clamp(mini_v-mini_v_old, -self.clip_param, self.clip_param)
             vf_loss = torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clip_mini_v, mini_ret)).mean()
 
+            total_loss = policy_loss + 0.5 * vf_loss
+
             # Update value network parameter
             self.vf_optimizer.zero_grad()
-            vf_loss.backward()
-            # nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
+            total_loss.backward()
+            nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
             self.vf_optimizer.step()
             
             # Update policy network parameter
             self.policy_optimizer.zero_grad()
-            policy_loss.backward()
-            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            total_loss.backward()
+            nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
             self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
