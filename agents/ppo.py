@@ -136,7 +136,8 @@ class Agent(object):
             self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
-      _, _, _, log_pi = self.policy(obs)
+      _, _, _, dist = self.policy(obs)
+      log_pi = dist.log_prob(act)
       approx_kl = (log_pi_old - log_pi).mean()     # A sample estimate for KL-divergence, easy to compute
       
       # Save losses
