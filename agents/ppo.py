@@ -122,11 +122,11 @@ class Agent(object):
          policy_loss, approx_kl = self.compute_policy_loss(obs, act, adv, log_pi_old)
          
          # Update policy network parameter
-         # if approx_kl <= 1.5 * self.target_kl:
-         self.policy_optimizer.zero_grad()
-         policy_loss.backward()
-         # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
-         self.policy_optimizer.step()
+         if approx_kl <= 1.5 * self.target_kl:
+            self.policy_optimizer.zero_grad()
+            policy_loss.backward()
+            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            self.policy_optimizer.step()
 
       # Save losses
       self.policy_losses.append(policy_loss.item())
