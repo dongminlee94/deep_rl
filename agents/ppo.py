@@ -27,7 +27,6 @@ class Agent(object):
                 sample_size=2048,
                 mini_batch_size=64,
                 clip_param=0.2,
-                target_kl=0.01,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
@@ -52,7 +51,6 @@ class Agent(object):
       self.sample_size = sample_size
       self.mini_batch_size = mini_batch_size
       self.clip_param = clip_param
-      self.target_kl = target_kl
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
       self.gradient_clip = gradient_clip
@@ -121,25 +119,21 @@ class Agent(object):
             vf_loss.backward()
             nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
             self.vf_optimizer.step()
-
-            # A sample estimate for KL-divergence, easy to compute
-            approx_kl = (mini_log_pi_old - mini_log_pi).mean()
             
             # Update policy network parameter
-            if approx_kl <= 1.5 * self.target_kl:
-               self.policy_optimizer.zero_grad()
-               policy_loss.backward()
-               nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
-               self.policy_optimizer.step()
+            self.policy_optimizer.zero_grad()
+            policy_loss.backward()
+            nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
       _, _, _, log_pi = self.policy(obs)
-      kl = (log_pi_old - log_pi).mean()
+      approx_kl = (log_pi_old - log_pi).mean()     # A sample estimate for KL-divergence, easy to compute
       
       # Save losses
       self.policy_losses.append(policy_loss.item())
       self.vf_losses.append(vf_loss.item())
-      self.kls.append(kl.item())
+      self.kls.append(approx_kl.item())
 
    def run(self, max_step):
       step_number = 0
