@@ -27,7 +27,7 @@ class Agent(object):
                 sample_size=2048,
                 mini_batch_size=64,
                 clip_param=0.2,
-                policy_lr=3e-4,
+                policy_lr=1e-3,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
                 eval_mode=False,
@@ -122,13 +122,13 @@ class Agent(object):
             # Update value network parameter
             self.vf_optimizer.zero_grad()
             total_loss.backward(retain_graph=True)
-            # nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
+            nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
             self.vf_optimizer.step()
             
             # Update policy network parameter
             self.policy_optimizer.zero_grad()
             total_loss.backward()
-            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
             self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
