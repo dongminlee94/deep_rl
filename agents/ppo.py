@@ -77,8 +77,13 @@ class Agent(object):
       act = batch['act']
       ret = batch['ret']
       adv = batch['adv']
-      log_pi_old = batch['log_pi'].detach()
-      v_old = batch['v'].detach()
+      # log_pi_old = batch['log_pi'].detach()
+      # v_old = batch['v'].detach()
+
+      _, _, _, log_pi_old = self.policy(obs)
+      log_pi_old = log_pi_old.detach()
+      v_old = self.vf(obs).squeeze(1)
+      v_old = v_old.detach()
 
       for _ in range(self.epochs):
          for _ in range(self.sample_size // self.mini_batch_size):

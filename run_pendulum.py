@@ -87,7 +87,7 @@ def main():
                       entropic_index=1.2, 
                       automatic_entropy_tuning=True)
     else: # vpg, npg, trpo, ppo
-        agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=2048)
+        agent = Agent(env, args, device, obs_dim, act_dim, act_limit)
 
     # Create a SummaryWriter object by TensorBoard
     if args.tensorboard:
