@@ -46,7 +46,7 @@ class Buffer(object):
         self.rew_buf = np.zeros(size, dtype=np.float32)
         self.don_buf = np.zeros(size, dtype=np.float32)
         self.ret_buf = np.zeros(size, dtype=np.float32)
-        self.adv_buf = np.zeros([size, 1], dtype=np.float32)
+        self.adv_buf = np.zeros(size, dtype=np.float32)
         self.v_buf = np.zeros(size, dtype=np.float32)
         self.gamma, self.lam = gamma, lam
         self.ptr, self.max_size = 0, size

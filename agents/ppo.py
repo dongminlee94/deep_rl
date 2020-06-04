@@ -76,7 +76,7 @@ class Agent(object):
       obs = batch['obs']
       act = batch['act']
       ret = batch['ret']
-      adv = batch['adv'].squeeze(1)
+      adv = batch['adv']
       # log_pi_old = batch['log_pi'].detach()
       # v_old = batch['v'].detach()
 
