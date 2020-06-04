@@ -80,7 +80,8 @@ class Agent(object):
       # log_pi_old = batch['log_pi'].detach()
       # v_old = batch['v'].detach()
 
-      _, _, _, log_pi_old = self.policy(obs, act)
+      _, _, _, dist_old = self.policy(obs)
+      log_pi_old = dist_old.log_prob(act)
       log_pi_old = log_pi_old.detach()
       v_old = self.vf(obs).squeeze(1)
       v_old = v_old.detach()
@@ -97,7 +98,8 @@ class Agent(object):
             mini_v_old = v_old[random_idxs]
 
             # Prediction logπ(s), V(s)
-            _, _, _, mini_log_pi = self.policy(mini_obs, mini_act)
+            _, _, _, dist = self.policy(mini_obs)
+            mini_log_pi = dist.log_prob(mini_act)
             mini_v = self.vf(mini_obs).squeeze(1)
 
             if 0: # Check shape of experiences & predictions with mini-batch size
