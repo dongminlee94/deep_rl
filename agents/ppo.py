@@ -76,12 +76,12 @@ class Agent(object):
       obs = batch['obs']
       act = batch['act']
       ret = batch['ret']
-      adv = batch['adv']
+      adv = batch['adv'].squeeze(1)
       # log_pi_old = batch['log_pi'].detach()
       # v_old = batch['v'].detach()
 
       _, _, _, dist_old = self.policy(obs, act)
-      log_pi_old = dist_old.log_prob(act).sum(dim=-1)
+      # log_pi_old = dist_old.log_prob(act).sum(dim=-1)
       log_pi_old = log_pi_old.detach()
       v_old = self.vf(obs).squeeze(1)
       v_old = v_old.detach()
@@ -98,8 +98,8 @@ class Agent(object):
             mini_v_old = v_old[random_idxs]
 
             # Prediction logπ(s), V(s)
-            _, _, _, dist = self.policy(mini_obs, mini_act)
-            mini_log_pi = dist.log_prob(mini_act).sum(dim=-1)
+            _, _, _, mini_log_pi = self.policy(mini_obs, mini_act)
+            # mini_log_pi = dist.log_prob(mini_act).sum(dim=-1)
             mini_v = self.vf(mini_obs).squeeze(1)
 
             if 1: # Check shape of experiences & predictions with mini-batch size
@@ -136,8 +136,8 @@ class Agent(object):
             self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
-      _, _, _, dist = self.policy(obs)
-      log_pi = dist.log_prob(act).sum(dim=-1)
+      _, _, _, log_pi = self.policy(obs, act)
+      # log_pi = dist.log_prob(act).sum(dim=-1)
       approx_kl = (log_pi_old - log_pi).mean()     # A sample estimate for KL-divergence, easy to compute
       
       # Save losses
