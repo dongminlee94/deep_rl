@@ -27,7 +27,7 @@ class Agent(object):
                 lam=0.97,
                 hidden_sizes=(64,64),
                 sample_size=2048,
-                policy_lr=3e-4,
+                policy_lr=1e-3,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
                 train_vf_iters=80,
