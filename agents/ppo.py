@@ -95,7 +95,7 @@ class Agent(object):
             _, _, _, mini_log_pi = self.policy(mini_obs, mini_act)
             mini_v = self.vf(mini_obs).squeeze(1)
 
-            if 1: # Check shape of experiences & predictions with mini-batch size
+            if 0: # Check shape of experiences & predictions with mini-batch size
                print("random_idxs", random_idxs.shape)
                print("mini_obs", mini_obs.shape)
                print("mini_act", mini_act.shape)
@@ -119,13 +119,13 @@ class Agent(object):
             # Update value network parameter
             self.vf_optimizer.zero_grad()
             total_loss.backward(retain_graph=True)
-            nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
+            # nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
             self.vf_optimizer.step()
             
             # Update policy network parameter
             self.policy_optimizer.zero_grad()
             total_loss.backward()
-            nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
+            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
             self.policy_optimizer.step()
 
       # Info (useful to watch during learning)
