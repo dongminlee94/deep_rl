@@ -10,7 +10,7 @@ from agents.common.networks import *
 
 
 class Agent(object):
-   """An implementation of the Proximal Policy Optimization (PPO) (by clipping) agent with early stopping based on approximate KL."""
+   """An implementation of the Proximal Policy Optimization (PPO) (by clipping) agent."""
 
    def __init__(self,
                 env,
@@ -23,14 +23,12 @@ class Agent(object):
                 gamma=0.99,
                 lam=0.97,
                 hidden_sizes=(64,64),
+                epochs=10,
                 sample_size=2048,
-                train_policy_iters=80,
-                train_vf_iters=80,
+                mini_batch_size=64,
                 clip_param=0.2,
-                target_kl=0.01,
                 policy_lr=1e-3,
                 vf_lr=1e-3,
-                gradient_clip=0.5,
                 eval_mode=False,
                 policy_losses=list(),
                 vf_losses=list(),
@@ -48,14 +46,12 @@ class Agent(object):
       self.gamma = gamma
       self.lam = lam
       self.hidden_sizes = hidden_sizes
+      self.epochs = epochs
       self.sample_size = sample_size
-      self.train_policy_iters = train_policy_iters
-      self.train_vf_iters = train_vf_iters
+      self.mini_batch_size = mini_batch_size
       self.clip_param = clip_param
-      self.target_kl = target_kl
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
-      self.gradient_clip = gradient_clip
       self.eval_mode = eval_mode
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
@@ -73,28 +69,6 @@ class Agent(object):
       # Experience buffer
       self.buffer = Buffer(self.obs_dim, self.act_dim, self.sample_size, self.device, self.gamma, self.lam)
 
-   def compute_policy_loss(self, obs, act, adv, log_pi_old):
-      # Prediction logπ(s)
-      _, _, _, log_pi = self.policy(obs, act)
-      
-      # Policy loss
-      ratio = torch.exp(log_pi - log_pi_old)
-      clip_adv = (torch.clamp(ratio, 1.-self.clip_param, 1.+self.clip_param)*adv)
-      policy_loss = -torch.min(ratio*adv, clip_adv).mean()
-
-      # A sample estimate for KL-divergence, easy to compute
-      approx_kl = (log_pi_old - log_pi).mean()
-      return policy_loss, approx_kl
-
-   def compute_vf_loss(self, obs, ret, v_old):
-      # Prediction V(s)
-      v = self.vf(obs).squeeze(1)
-
-      # Value loss
-      clip_v = v_old + torch.clamp(v-v_old, -self.clip_param, self.clip_param)
-      vf_loss = torch.max(F.mse_loss(v, ret), F.mse_loss(clip_v, ret)).mean()
-      return vf_loss
-
    def train_model(self):
       batch = self.buffer.get()
       obs = batch['obs']
@@ -107,27 +81,56 @@ class Agent(object):
       v_old = self.vf(obs).squeeze(1)
       v_old = v_old.detach()
 
-      # Train value with multiple steps of gradient descent
-      for i in range(self.train_vf_iters):
-         vf_loss = self.compute_vf_loss(obs, ret, v_old)
+      for _ in range(self.epochs):
+         for _ in range(self.sample_size // self.mini_batch_size):
+            random_idxs = np.random.choice(self.sample_size, self.mini_batch_size)
+            
+            mini_obs = obs[random_idxs,:]
+            mini_act = act[random_idxs,:]
+            mini_ret = ret[random_idxs]
+            mini_adv = adv[random_idxs]
+            mini_log_pi_old = log_pi_old[random_idxs]
+            mini_v_old = v_old[random_idxs]
 
-         # Update value network parameter
-         self.vf_optimizer.zero_grad()
-         vf_loss.backward()
-         # nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
-         self.vf_optimizer.step()
+            # Prediction logπ(s), V(s)
+            _, _, _, mini_log_pi = self.policy(mini_obs, mini_act)
+            mini_v = self.vf(mini_obs).squeeze(1)
+
+            if 0: # Check shape of experiences & predictions with mini-batch size
+               print("random_idxs", random_idxs.shape)
+               print("mini_obs", mini_obs.shape)
+               print("mini_act", mini_act.shape)
+               print("mini_ret", mini_ret.shape)
+               print("mini_adv", mini_adv.shape)
+               print("mini_log_pi_old", mini_log_pi_old.shape)
+               print('mini_log_pi', mini_log_pi.shape)
+               print("mini_v_old", mini_v_old.shape)
+               print('mini_v', mini_v.shape)
+
+            # PPO losses
+            ratio = torch.exp(mini_log_pi - mini_log_pi_old)
+            clip_mini_adv = (torch.clamp(ratio, 1.-self.clip_param, 1.+self.clip_param)*mini_adv)
+            policy_loss = -torch.min(ratio*mini_adv, clip_mini_adv).mean()
+            
+            clip_mini_v = mini_v_old + torch.clamp(mini_v-mini_v_old, -self.clip_param, self.clip_param)
+            vf_loss = torch.max(F.mse_loss(mini_v, mini_ret), F.mse_loss(clip_mini_v, mini_ret)).mean()
+
+            total_loss = policy_loss + 0.5 * vf_loss
+
+            # Update value network parameter
+            self.vf_optimizer.zero_grad()
+            total_loss.backward(retain_graph=True)
+            self.vf_optimizer.step()
+
+            # Update policy network parameter
+            self.policy_optimizer.zero_grad()
+            total_loss.backward()
+            self.policy_optimizer.step()
+
+      # Info (useful to watch during learning)
+      _, _, _, log_pi = self.policy(obs, act)
+      approx_kl = (log_pi_old - log_pi).mean()     # A sample estimate for KL-divergence, easy to compute
       
-      # Train policy with multiple steps of gradient descent
-      for i in range(self.train_policy_iters):
-         policy_loss, approx_kl = self.compute_policy_loss(obs, act, adv, log_pi_old)
-         
-         # Update policy network parameter
-         # if approx_kl <= 1.5 * self.target_kl:
-         self.policy_optimizer.zero_grad()
-         policy_loss.backward()
-         # nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
-         self.policy_optimizer.step()
-
       # Save losses
       self.policy_losses.append(policy_loss.item())
       self.vf_losses.append(vf_loss.item())
