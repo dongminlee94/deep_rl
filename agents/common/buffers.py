@@ -47,7 +47,6 @@ class Buffer(object):
         self.don_buf = np.zeros(size, dtype=np.float32)
         self.ret_buf = np.zeros(size, dtype=np.float32)
         self.adv_buf = np.zeros([size, 1], dtype=np.float32)
-        # self.log_pi_buf = np.zeros(size, dtype=np.float32)
         self.v_buf = np.zeros(size, dtype=np.float32)
         self.gamma, self.lam = gamma, lam
         self.ptr, self.max_size = 0, size
@@ -59,7 +58,6 @@ class Buffer(object):
         self.act_buf[self.ptr] = act
         self.rew_buf[self.ptr] = rew
         self.don_buf[self.ptr] = don
-        # self.log_pi_buf[self.ptr] = log_pi
         self.v_buf[self.ptr] = v
         self.ptr += 1
 
@@ -87,6 +85,5 @@ class Buffer(object):
                     act=torch.Tensor(self.act_buf).to(self.device),
                     ret=torch.Tensor(self.ret_buf).to(self.device),
                     adv=torch.Tensor(self.adv_buf).to(self.device),
-                    # log_pi=torch.Tensor(self.log_pi_buf).to(self.device),
                     v=torch.Tensor(self.v_buf).to(self.device))
         

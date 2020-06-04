@@ -87,15 +87,13 @@ class GaussianPolicy(MLP):
             activation=activation,
         )
 
-    def forward(self, x, pi=None):
+    def forward(self, x):
         mu = super(GaussianPolicy, self).forward(x)
         log_std = torch.zeros_like(mu)
         std = torch.exp(log_std)
         
         dist = Normal(mu, std)
-        # if pi is None:
         pi = dist.sample()
-        # log_pi = dist.log_prob(pi).sum(dim=-1)
         return mu, std, pi, dist
 
 
