@@ -27,7 +27,6 @@ class Agent(object):
                 train_policy_iters=80,
                 train_vf_iters=80,
                 clip_param=0.2,
-                target_kl=0.01,
                 policy_lr=1e-3,
                 vf_lr=1e-3,
                 eval_mode=False,
@@ -51,7 +50,6 @@ class Agent(object):
       self.train_policy_iters = train_policy_iters
       self.train_vf_iters = train_vf_iters
       self.clip_param = clip_param
-      self.target_kl = target_kl
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
       self.eval_mode = eval_mode
@@ -119,10 +117,9 @@ class Agent(object):
          policy_loss, approx_kl = self.compute_policy_loss(obs, act, adv, log_pi_old)
          
          # Update policy network parameter
-         if approx_kl <= 1.5 * self.target_kl:
-            self.policy_optimizer.zero_grad()
-            policy_loss.backward()
-            self.policy_optimizer.step()
+         self.policy_optimizer.zero_grad()
+         policy_loss.backward()
+         self.policy_optimizer.step()
 
       # Save losses
       self.policy_losses.append(policy_loss.item())
