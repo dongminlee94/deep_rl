@@ -10,7 +10,10 @@ from agents.common.networks import *
 
 
 class Agent(object):
-   """An implementation of the Proximal Policy Optimization (PPO) (by clipping) agent with early stopping based on approximate KL."""
+   """
+   An implementation of the Proximal Policy Optimization (PPO) (by clipping) agent, 
+   with early stopping based on approximate KL.
+   """
 
    def __init__(self,
                 env,
@@ -28,7 +31,7 @@ class Agent(object):
                 train_vf_iters=80,
                 clip_param=0.2,
                 target_kl=0.01,
-                policy_lr=1e-3,
+                policy_lr=3e-4,
                 vf_lr=1e-3,
                 eval_mode=False,
                 policy_losses=list(),
