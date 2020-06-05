@@ -28,7 +28,7 @@ class Agent(object):
                 train_vf_iters=80,
                 clip_param=0.2,
                 target_kl=0.01,
-                policy_lr=3e-4,
+                policy_lr=1e-3,
                 vf_lr=1e-3,
                 gradient_clip=0.5,
                 eval_mode=False,
