@@ -30,7 +30,6 @@ class Agent(object):
                 target_kl=0.01,
                 policy_lr=1e-3,
                 vf_lr=1e-3,
-                gradient_clip=0.5,
                 eval_mode=False,
                 policy_losses=list(),
                 vf_losses=list(),
@@ -55,7 +54,6 @@ class Agent(object):
       self.target_kl = target_kl
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
-      self.gradient_clip = gradient_clip
       self.eval_mode = eval_mode
       self.policy_losses = policy_losses
       self.vf_losses = vf_losses
@@ -83,7 +81,7 @@ class Agent(object):
       return vf_loss
 
    def compute_policy_loss(self, obs, act, adv, log_pi_old):
-          # Prediction logπ(s)
+      # Prediction logπ(s)
       _, _, _, log_pi = self.policy(obs, act)
       
       # Policy loss
@@ -114,7 +112,6 @@ class Agent(object):
          # Update value network parameter
          self.vf_optimizer.zero_grad()
          vf_loss.backward()
-         nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
          self.vf_optimizer.step()
       
       # Train policy with multiple steps of gradient descent
@@ -128,7 +125,6 @@ class Agent(object):
          # Update policy network parameter
          self.policy_optimizer.zero_grad()
          policy_loss.backward()
-         nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
          self.policy_optimizer.step()
 
       # Save losses
