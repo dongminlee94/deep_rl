@@ -114,7 +114,11 @@ class Agent(object):
       
       # Train policy with multiple steps of gradient descent
       for i in range(self.train_policy_iters):
-         policy_loss, approx_kl = self.compute_policy_loss(obs, act, adv, log_pi_old)
+         policy_loss, kl = self.compute_policy_loss(obs, act, adv, log_pi_old)
+         
+         # Early stopping at step i due to reaching max kl
+         if kl > 1.5 * self.target_kl:
+            break
          
          # Update policy network parameter
          self.policy_optimizer.zero_grad()
@@ -124,7 +128,7 @@ class Agent(object):
       # Save losses
       self.policy_losses.append(policy_loss.item())
       self.vf_losses.append(vf_loss.item())
-      self.kls.append(approx_kl.item())
+      self.kls.append(kl.item())
 
    def run(self, max_step):
       step_number = 0
