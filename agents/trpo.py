@@ -25,11 +25,11 @@ class Agent(object):
                 steps=0,
                 gamma=0.99,
                 lam=0.97,
-                delta=0.01,
                 hidden_sizes=(64,64),
                 sample_size=2048,
                 vf_lr=1e-3,
                 train_vf_iters=80,
+                delta=0.01,
                 backtrack_iter=10,
                 backtrack_coeff=1.0,
                 backtrack_alpha=0.5,
@@ -50,11 +50,11 @@ class Agent(object):
       self.steps = steps 
       self.gamma = gamma
       self.lam = lam
-      self.delta = delta
       self.hidden_sizes = hidden_sizes
       self.sample_size = sample_size
       self.vf_lr = vf_lr
       self.train_vf_iters = train_vf_iters
+      self.delta = delta
       self.backtrack_iter = backtrack_iter
       self.backtrack_coeff = backtrack_coeff
       self.backtrack_alpha = backtrack_alpha
