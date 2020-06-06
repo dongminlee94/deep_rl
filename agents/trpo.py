@@ -8,7 +8,6 @@ from agents.common.utils import *
 from agents.common.buffers import *
 from agents.common.networks import *
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent(object):
    """
@@ -30,7 +29,6 @@ class Agent(object):
                 hidden_sizes=(64,64),
                 sample_size=2048,
                 vf_lr=1e-3,
-                gradient_clip=0.5,
                 train_vf_iters=80,
                 backtrack_iter=10,
                 backtrack_coeff=1.0,
@@ -155,17 +153,9 @@ class Agent(object):
    def train_model(self):
       batch = self.buffer.get()
       obs = batch['obs']
-      act = batch['act'].detach()
+      act = batch['act']
       ret = batch['ret']
       adv = batch['adv']
-      log_pi_old = batch['log_pi'].detach()
-      
-      if 0: # Check shape of experiences & predictions
-         print("obs", obs.shape)
-         print("act", act.shape)
-         print("ret", ret.shape)
-         print("adv", adv.shape)
-         print("log_pi_old", log_pi_old.shape)
       
       # Update value network parameter
       for _ in range(self.train_vf_iters):
@@ -177,17 +167,17 @@ class Agent(object):
 
          self.vf_optimizer.zero_grad()
          vf_loss.backward()
-         nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
          self.vf_optimizer.step()
 
-      # Prediction logπ(s)
-      _, _, _, log_pi = self.policy(obs, act)
+      # Prediction logπ_old(s)
+      _, _, _, log_pi_old = self.policy(obs, act)
+      log_pi_old = log_pi_old.detach()
    
       # Policy loss
       ratio_old = torch.exp(log_pi - log_pi_old)
       policy_loss_old = (ratio_old*adv).mean()
 
-      # Symbols needed for CG solver
+      # Symbols needed for Conjugate gradient solver
       gradient = torch.autograd.grad(policy_loss_old, self.policy.parameters())
       gradient = self.flat_grad(gradient)
 
@@ -258,13 +248,13 @@ class Agent(object):
             self.steps += 1
             
             # Collect experience (s, a, r, s') using some policy
-            _, _, action, log_pi = self.policy(torch.Tensor(obs).to(self.device))
+            _, _, action, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
 
             # Add experience to buffer
             v = self.vf(torch.Tensor(obs).to(self.device))
-            self.buffer.add(obs, action, reward, done, log_pi, v)
+            self.buffer.add(obs, action, reward, done, v)
             
             # Start training when the number of experience is equal to sample size
             if self.steps == self.sample_size:

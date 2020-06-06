@@ -103,6 +103,7 @@ class Agent(object):
       ret = batch['ret']
       adv = batch['adv']
       
+      # Prediction logπ_old(s), V_old(s)
       _, _, _, log_pi_old = self.policy(obs, act)
       log_pi_old = log_pi_old.detach()
       v_old = self.vf(obs).squeeze(1)
