@@ -54,7 +54,6 @@ class Agent(object):
       self.hidden_sizes = hidden_sizes
       self.sample_size = sample_size
       self.vf_lr = vf_lr
-      self.gradient_clip = gradient_clip
       self.train_vf_iters = train_vf_iters
       self.backtrack_iter = backtrack_iter
       self.backtrack_coeff = backtrack_coeff
