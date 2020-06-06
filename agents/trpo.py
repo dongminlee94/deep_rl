@@ -168,9 +168,10 @@ class Agent(object):
          vf_loss.backward()
          self.vf_optimizer.step()
 
-      # Prediction logπ_old(s)
+      # Prediction logπ_old(s), logπ(s)
       _, _, _, log_pi_old = self.policy(obs, act)
       log_pi_old = log_pi_old.detach()
+      _, _, _, log_pi = self.policy(obs, act)
    
       # Policy loss
       ratio_old = torch.exp(log_pi - log_pi_old)
