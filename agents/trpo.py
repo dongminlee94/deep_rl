@@ -25,7 +25,7 @@ class Agent(object):
                 steps=0,
                 gamma=0.99,
                 lam=0.97,
-                delta=1e-2,
+                delta=0.01,
                 hidden_sizes=(64,64),
                 sample_size=2048,
                 vf_lr=1e-3,
