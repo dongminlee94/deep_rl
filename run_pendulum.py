@@ -23,7 +23,7 @@ parser.add_argument('--evaluation_eps', type=int, default=100,
                     help='evaluation episode number')
 parser.add_argument('--max_step', type=int, default=200,
                     help='max episode step')
-parser.add_argument('--threshold_return', type=int, default=-2,
+parser.add_argument('--threshold_return', type=int, default=-230,
                     help='solved requirement for success in given environment')
 parser.add_argument('--tensorboard', type=bool, default=True)
 parser.add_argument('--gpu_index', type=int, default=0)
