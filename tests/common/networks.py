@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from torch.distributions import Categorical, Normal
 from agents.common.utils import identity
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 """
 DQN, DDQN, A2C critic, VPG critic, TRPO critic, PPO critic, DDPG actor, TD3 actor
@@ -58,9 +57,8 @@ class CategoricalPolicy(MLP):
 
         dist = Categorical(pi)
         action = dist.sample()
-        log_pi = dist.log_prob(action).sum(dim=-1)
-        entropy = dist.entropy()
-        return action, log_pi, entropy, pi
+        log_pi = dist.log_prob(action)
+        return action, pi, log_pi
 
 
 """
@@ -89,14 +87,16 @@ class GaussianPolicy(MLP):
             activation=activation,
         )
 
-    def forward(self, x):
+    def forward(self, x, pi=None):
         mu = super(GaussianPolicy, self).forward(x)
         log_std = torch.zeros_like(mu)
         std = torch.exp(log_std)
         
         dist = Normal(mu, std)
-        pi = dist.sample()
-        return mu, std, dist, pi
+        if pi == None:
+            pi = dist.sample()
+        log_pi = dist.log_prob(pi).sum(dim=-1)
+        return mu, std, pi, log_pi
 
 
 """
@@ -108,12 +108,13 @@ LOG_STD_MIN = -20
 class ReparamGaussianPolicy(MLP):
     def __init__(self, 
                  input_size, 
-                 output_size, 
+                 output_size,
                  hidden_sizes=(64,64),
                  activation=F.relu,
                  action_scale=1.0,
                  log_type='log',
                  q=1.5,
+                 device=None, 
     ):
         super(ReparamGaussianPolicy, self).__init__(
             input_size=input_size,
@@ -124,13 +125,14 @@ class ReparamGaussianPolicy(MLP):
         )
 
         in_size = hidden_sizes[-1]
-
-        # Set output layers
-        self.mu_layer = nn.Linear(in_size, output_size)
-        self.log_std_layer = nn.Linear(in_size, output_size)
         self.action_scale = action_scale
         self.log_type = log_type
         self.q = 2.0 - q
+        self.device = device
+
+        # Set output layers
+        self.mu_layer = nn.Linear(in_size, output_size)
+        self.log_std_layer = nn.Linear(in_size, output_size)        
 
     def clip_but_pass_gradient(self, x, l=-1., u=1.):
         clip_up = (x > u).float()
@@ -149,7 +151,7 @@ class ReparamGaussianPolicy(MLP):
         return mu, pi, log_pi
 
     def tsallis_entropy_log_q(self, x, q):
-        safe_x = torch.max(x, torch.Tensor([1e-6]).to(device))
+        safe_x = torch.max(x, torch.Tensor([1e-6]).to(self.device))
         log_q_x = torch.log(safe_x) if q==1. else (safe_x.pow(1-q)-1)/(1-q)
         return log_q_x.sum(dim=-1)
         
