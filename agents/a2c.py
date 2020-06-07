@@ -55,11 +55,11 @@ class Agent(object):
       # Prediction V(s)
       v = self.vf(obs)
 
-      self.transition.extend([v, log_pi])
+      self.transition.extend([log_pi, v])
       return action.detach().cpu().numpy()
 
    def train_model(self):
-      v, log_pi, next_obs, reward, done = self.transition
+      log_pi, v, next_obs, reward, done = self.transition
 
       # Prediction V(s')
       next_v = self.vf(torch.Tensor(next_obs).to(self.device))
