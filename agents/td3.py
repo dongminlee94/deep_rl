@@ -192,7 +192,7 @@ class Agent(object):
             # Add experience to replay buffer
             self.replay_buffer.add(obs, action, reward, next_obs, done)
             
-            # Start training when the number of experience is greater than batch size
+            # Start training when the number of experience is greater than train_after
             if self.steps > self.train_after:
                self.train_model()
 

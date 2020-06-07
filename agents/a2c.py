@@ -17,7 +17,6 @@ class Agent(object):
                 act_num,
                 steps=0,
                 gamma=0.99,
-                ent_coef=1e-3,
                 policy_lr=3e-4,
                 vf_lr=1e-3,
                 eval_mode=False,
@@ -33,7 +32,6 @@ class Agent(object):
       self.act_num = act_num
       self.steps = steps 
       self.gamma = gamma
-      self.ent_coef = ent_coef
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
       self.eval_mode = eval_mode
@@ -57,11 +55,11 @@ class Agent(object):
       # Prediction V(s)
       v = self.vf(obs)
 
-      self.transition.extend([log_pi, v])
+      self.transition.extend([v, log_pi])
       return action.detach().cpu().numpy()
 
    def train_model(self):
-      log_pi, v, next_obs, reward, done = self.transition
+      v, log_pi, next_obs, reward, done = self.transition
 
       # Prediction V(s')
       next_v = self.vf(torch.Tensor(next_obs).to(self.device))
@@ -73,10 +71,10 @@ class Agent(object):
       # Advantage = Q - V
       advant = q - v
 
-      if 0: # Check shape of prediction and target
-         print("log_pi", log_pi.shape)
-         print("v", v.shape)
+      if 1: # Check shape of prediction and target
          print("q", q.shape)
+         print("v", v.shape)
+         print("log_pi", log_pi.shape)
 
       # A2C losses
       policy_loss = -log_pi*advant.detach()
@@ -105,13 +103,13 @@ class Agent(object):
 
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
-         self.steps += 1
-         
          if self.eval_mode:
             _, pi, _ = self.policy(torch.Tensor(obs).to(self.device))
             action = pi.argmax().detach().cpu().numpy()
             next_obs, reward, done, _ = self.env.step(action)
          else:
+            self.steps += 1
+
             # Create a transition list
             self.transition = []
 
