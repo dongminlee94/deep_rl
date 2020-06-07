@@ -18,8 +18,6 @@ class Agent(object):
                 obs_dim,
                 act_num,
                 steps=0,
-                expl_before=5000,
-                train_after=1000,
                 gamma=0.99,
                 epsilon=1.0,
                 epsilon_decay=0.995,
@@ -37,8 +35,6 @@ class Agent(object):
       self.obs_dim = obs_dim
       self.act_num = act_num
       self.steps = steps
-      self.expl_before = expl_before
-      self.train_after = train_after
       self.gamma = gamma
       self.epsilon = epsilon
       self.epsilon_decay = epsilon_decay
@@ -138,22 +134,15 @@ class Agent(object):
          else:
             self.steps += 1
 
-            # Until expl_before have elapsed, randomly sample actions 
-            # from a uniform distribution for better exploration.
-            # Afterwards, use the learned Q-value.
-            if self.steps > self.expl_before:
-               action = self.select_action(torch.Tensor(obs).to(self.device))
-            else:
-               action = self.env.action_space.sample()
-
             # Collect experience (s, a, r, s') using some policy
+            action = self.select_action(torch.Tensor(obs).to(self.device))
             next_obs, reward, done, _ = self.env.step(action)
          
             # Add experience to replay buffer
             self.replay_buffer.add(obs, action, reward, next_obs, done)
             
-            # Start training when the number of experience is greater than train_after
-            if self.steps > self.train_after:
+            # Start training when the number of experience is greater than batch_size
+            if self.steps > self.batch_size:
                self.train_model()
 
          total_reward += reward

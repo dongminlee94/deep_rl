@@ -57,7 +57,7 @@ class CategoricalPolicy(MLP):
 
         dist = Categorical(pi)
         action = dist.sample()
-        log_pi = dist.log_prob(action).sum(dim=-1)
+        log_pi = dist.log_prob(action)
         return action, pi, log_pi
 
 
