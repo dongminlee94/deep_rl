@@ -71,7 +71,7 @@ class Agent(object):
       # Advantage = Q - V
       advant = q - v
 
-      if 1: # Check shape of prediction and target
+      if 0: # Check shape of prediction and target
          print("q", q.shape)
          print("v", v.shape)
          print("log_pi", log_pi.shape)
