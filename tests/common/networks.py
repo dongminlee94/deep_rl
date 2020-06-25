@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical, Normal
-from agents.common.utils import identity
+from common.utils import identity
 
 
 """
