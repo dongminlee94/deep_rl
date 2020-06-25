@@ -17,7 +17,7 @@ class Agent(object):
                 act_num,
                 steps=0,
                 gamma=0.99,
-                policy_lr=3e-4,
+                policy_lr=1e-4,
                 vf_lr=1e-3,
                 eval_mode=False,
                 policy_losses=list(),
