@@ -52,7 +52,7 @@ def main():
             if args.algo == 'dqn' or args.algo == 'ddqn':
                 action = mlp(torch.Tensor(obs).to(device)).argmax().detach().cpu().numpy()
             elif args.algo == 'a2c':
-                _, _, _, pi = mlp(torch.Tensor(obs).to(device))
+                _, pi, _ = mlp(torch.Tensor(obs).to(device))
                 action = pi.argmax().detach().cpu().numpy()
             
             next_obs, reward, done, _ = env.step(action)
