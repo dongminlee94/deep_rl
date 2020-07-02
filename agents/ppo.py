@@ -85,7 +85,7 @@ class Agent(object):
 
    def compute_policy_loss(self, obs, act, adv, log_pi_old):
       # Prediction logπ(s)
-      _, _, _, log_pi = self.policy(obs, act)
+      _, _, _, log_pi = self.policy(obs, act, use_pi=False)
       
       # Policy loss
       ratio = torch.exp(log_pi - log_pi_old)
@@ -104,7 +104,7 @@ class Agent(object):
       adv = batch['adv']
       
       # Prediction logπ_old(s), V_old(s)
-      _, _, _, log_pi_old = self.policy(obs, act)
+      _, _, _, log_pi_old = self.policy(obs, act, use_pi=False)
       log_pi_old = log_pi_old.detach()
       v_old = self.vf(obs).squeeze(1)
       v_old = v_old.detach()

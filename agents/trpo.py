@@ -169,9 +169,9 @@ class Agent(object):
          self.vf_optimizer.step()
 
       # Prediction logπ_old(s), logπ(s)
-      _, _, _, log_pi_old = self.policy(obs, act)
+      _, _, _, log_pi_old = self.policy(obs, act, use_pi=False)
       log_pi_old = log_pi_old.detach()
-      _, _, _, log_pi = self.policy(obs, act)
+      _, _, _, log_pi = self.policy(obs, act, use_pi=False)
    
       # Policy loss
       ratio_old = torch.exp(log_pi - log_pi_old)
@@ -202,7 +202,7 @@ class Agent(object):
             params = old_params + self.backtrack_coeff * step_size * search_dir
             self.update_model(self.policy, params)
 
-            _, _, _, log_pi = self.policy(obs, act)
+            _, _, _, log_pi = self.policy(obs, act, use_pi=False)
             ratio = torch.exp(log_pi - log_pi_old)
             policy_loss = (ratio*adv).mean()
 
