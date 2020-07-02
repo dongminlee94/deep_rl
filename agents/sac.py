@@ -116,18 +116,18 @@ class Agent(object):
          print("rews", rews.shape)
          print("done", done.shape)
 
-      # Prediction π(s), logπ(s), π(s'), logπ(s'), Q1(s,a), Q2(s,a)
+      # Prediction π(a|s), logπ(a|s), π(a'|s'), logπ(a'|s'), Q1(s,a), Q2(s,a)
       _, pi, log_pi = self.policy(obs1)
       _, next_pi, next_log_pi = self.policy(obs2)
       q1 = self.qf1(obs1, acts).squeeze(1)
       q2 = self.qf2(obs1, acts).squeeze(1)
 
-      # Min Double-Q: min(Q1(s,π(s)), Q2(s,π(s))), min(Q1‾(s',π(s')), Q2‾(s',π(s')))
+      # Min Double-Q: min(Q1(s,π(a|s)), Q2(s,π(a|s))), min(Q1‾(s',π(a'|s')), Q2‾(s',π(a'|s')))
       min_q_pi = torch.min(self.qf1(obs1, pi), self.qf2(obs1, pi)).squeeze(1).to(self.device)
       min_q_next_pi = torch.min(self.qf1_target(obs2, next_pi), 
                                 self.qf2_target(obs2, next_pi)).squeeze(1).to(self.device)
 
-      # Targets for Q and V regression
+      # Targets for Q regression
       v_backup = min_q_next_pi - self.alpha*next_log_pi
       q_backup = rews + self.gamma*(1-done)*v_backup
       q_backup.to(self.device)

@@ -2,7 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical, Normal
-from agents.common.utils import identity
+
+
+def identity(x):
+    """Return input without any change."""
+    return x
 
 
 """
@@ -12,19 +16,23 @@ class MLP(nn.Module):
     def __init__(self, 
                  input_size, 
                  output_size, 
+                 output_limit=1.0,
                  hidden_sizes=(64,64), 
                  activation=F.relu, 
                  output_activation=identity,
                  use_output_layer=True,
+                 use_actor=False,
     ):
         super(MLP, self).__init__()
 
         self.input_size = input_size
         self.output_size = output_size
+        self.output_limit = output_limit
         self.hidden_sizes = hidden_sizes
         self.activation = activation
         self.output_activation = output_activation
         self.use_output_layer = use_output_layer
+        self.use_actor = use_actor
 
         # Set hidden layers
         self.hidden_layers = nn.ModuleList()
@@ -44,6 +52,8 @@ class MLP(nn.Module):
         for hidden_layer in self.hidden_layers:
             x = self.activation(hidden_layer(x))
         x = self.output_activation(self.output_layer(x))
+        # If the network is used as actor network, make sure output is in correct range
+        x = x * self.output_limit if self.use_actor else x   
         return x
 
 
@@ -109,9 +119,9 @@ class ReparamGaussianPolicy(MLP):
     def __init__(self, 
                  input_size, 
                  output_size,
+                 output_limit=1.0,
                  hidden_sizes=(64,64),
                  activation=F.relu,
-                 action_scale=1.0,
                  log_type='log',
                  q=1.5,
                  device=None, 
@@ -125,7 +135,7 @@ class ReparamGaussianPolicy(MLP):
         )
 
         in_size = hidden_sizes[-1]
-        self.action_scale = action_scale
+        self.output_limit = output_limit
         self.log_type = log_type
         self.q = 2.0 - q
         self.device = device
@@ -165,7 +175,7 @@ class ReparamGaussianPolicy(MLP):
         
         # https://pytorch.org/docs/stable/distributions.html#normal
         dist = Normal(mu, std)
-        pi = dist.rsample() # reparameterization trick (mean + std * N(0,1))
+        pi = dist.rsample() # Reparameterization trick (mean + std * N(0,1))
 
         if self.log_type == 'log':
             log_pi = dist.log_prob(pi).sum(dim=-1)
@@ -173,10 +183,9 @@ class ReparamGaussianPolicy(MLP):
         elif self.log_type == 'log-q':
             log_pi = dist.log_prob(pi)
             mu, pi, log_pi = self.apply_squashing_func(mu, pi, log_pi)
-            exp_log_pi = torch.exp(log_pi)
-            log_pi = self.tsallis_entropy_log_q(exp_log_pi, self.q)
+            log_pi = self.tsallis_entropy_log_q(torch.exp(log_pi), self.q)
         
-        # make sure actions are in correct range
-        mu = mu * self.action_scale
-        pi = pi * self.action_scale
+        # Make sure outputs are in correct range
+        mu = mu * self.output_limit
+        pi = mu * self.output_limit
         return mu, pi, log_pi

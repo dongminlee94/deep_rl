@@ -61,12 +61,16 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.policy = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
-                                                   output_activation=torch.tanh).to(self.device)
+      self.policy = MLP(self.obs_dim, self.act_dim, self.act_limit, 
+                                    hidden_sizes=self.hidden_sizes, 
+                                    output_activation=torch.tanh,
+                                    use_actor=True).to(self.device)
       self.qf = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       # Target network
-      self.policy_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
-                                                          output_activation=torch.tanh).to(self.device)
+      self.policy_target = MLP(self.obs_dim, self.act_dim, self.act_limit,
+                                           hidden_sizes=self.hidden_sizes, 
+                                           output_activation=torch.tanh,
+                                           use_actor=True).to(self.device)
       self.qf_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       
       # Initialize target parameters to match main parameters
@@ -100,12 +104,10 @@ class Agent(object):
          print("rews", rews.shape)
          print("done", done.shape)
 
-      # Prediction Q(s,π(s)), Q(s,a), Q‾(s',π‾(s'))
-      pi = self.policy(obs1)
-      q_pi = self.qf(obs1, pi)
+      # Prediction Q(s,𝜇(s)), Q(s,a), Q‾(s',𝜇‾(s'))
+      q_pi = self.qf(obs1, self.policy(obs1))
       q = self.qf(obs1, acts).squeeze(1)
-      pi_target = self.policy_target(obs2)
-      q_pi_target = self.qf_target(obs2, pi_target).squeeze(1)
+      q_pi_target = self.qf_target(obs2, self.policy_target(obs2)).squeeze(1)
       
       # Target for Q regression
       q_backup = rews + self.gamma*(1-done)*q_pi_target

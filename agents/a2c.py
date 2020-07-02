@@ -55,11 +55,12 @@ class Agent(object):
       # Prediction V(s)
       v = self.vf(obs)
 
+      # Add logπ(a|s), V(s) to transition list
       self.transition.extend([log_pi, v])
       return action.detach().cpu().numpy()
 
    def train_model(self):
-      log_pi, v, next_obs, reward, done = self.transition
+      log_pi, v, reward, next_obs, done = self.transition
 
       # Prediction V(s')
       next_v = self.vf(torch.Tensor(next_obs).to(self.device))
@@ -117,7 +118,8 @@ class Agent(object):
             action = self.select_action(torch.Tensor(obs).to(self.device))
             next_obs, reward, done, _ = self.env.step(action)
 
-            self.transition.extend([next_obs, reward, done])
+            # Add (r, s') to transition list
+            self.transition.extend([reward, next_obs, done])
             
             self.train_model()
 

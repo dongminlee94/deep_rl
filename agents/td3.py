@@ -63,13 +63,17 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.policy = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
-                                                   output_activation=torch.tanh).to(self.device)
+      self.policy = MLP(self.obs_dim, self.act_dim, self.act_limit,
+                                    hidden_sizes=self.hidden_sizes, 
+                                    output_activation=torch.tanh,
+                                    use_actor=True).to(self.device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       # Target network
-      self.policy_target = MLP(self.obs_dim, self.act_dim, hidden_sizes=self.hidden_sizes, 
-                                                          output_activation=torch.tanh).to(self.device)
+      self.policy_target = MLP(self.obs_dim, self.act_dim, self.act_limit,
+                                           hidden_sizes=self.hidden_sizes, 
+                                           output_activation=torch.tanh,
+                                           use_actor=True).to(self.device)
       self.qf1_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       self.qf2_target = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       
@@ -107,9 +111,8 @@ class Agent(object):
          print("rews", rews.shape)
          print("done", done.shape)
 
-      # Prediction Q1(s,π(s)), Q1(s,a), Q2(s,a)
-      pi = self.policy(obs1)
-      q1_pi = self.qf1(obs1, pi)
+      # Prediction Q1(s,𝜇(s)), Q1(s,a), Q2(s,a)
+      q1_pi = self.qf1(obs1, self.policy(obs1))
       q1 = self.qf1(obs1, acts).squeeze(1)
       q2 = self.qf2(obs1, acts).squeeze(1)
 
@@ -119,7 +122,7 @@ class Agent(object):
       epsilon = torch.clamp(epsilon, -self.noise_clip, self.noise_clip).to(self.device)
       pi_target = torch.clamp(pi_target+epsilon, -self.act_limit, self.act_limit).to(self.device)
 
-      # Min Double-Q: min(Q1‾(s',π(s')), Q2‾(s',π(s')))
+      # Min Double-Q: min(Q1‾(s',𝜇(s')), Q2‾(s',𝜇(s')))
       min_q_pi_target = torch.min(self.qf1_target(obs2, pi_target), 
                                   self.qf2_target(obs2, pi_target)).squeeze(1).to(self.device)
       

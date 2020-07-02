@@ -3,7 +3,7 @@ import gym
 import argparse
 import numpy as np
 import torch
-from common.networks import *
+from networks import *
 
 # Configurations
 parser = argparse.ArgumentParser()
