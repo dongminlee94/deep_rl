@@ -99,7 +99,7 @@ class Agent(object):
          self.vf_optimizer.step()
       
       # Prediction logπ(s)
-      _, _, _, log_pi = self.policy(obs, act)
+      _, _, _, log_pi = self.policy(obs, act, use_pi=False)
       
       # Policy loss
       policy_loss = -(log_pi_old*adv).mean()
