@@ -31,9 +31,9 @@ def main():
     if args.algo == 'trpo' or args.algo == 'ppo':
         mlp = GaussianPolicy(obs_dim, act_dim).to(device)
     elif args.algo == 'ddpg' or args.algo == 'td3':
-        mlp = MLP(obs_dim, act_dim, hidden_sizes=(300,300), output_activation=torch.tanh).to(device)
+        mlp = MLP(obs_dim, act_dim, hidden_sizes=(256,256), output_activation=torch.tanh).to(device)
     elif args.algo == 'sac' or args.algo == 'asac' or args.algo == 'tac' or args.algo == 'atac':
-        mlp = ReparamGaussianPolicy(obs_dim, act_dim, hidden_sizes=(300,300)).to(device)
+        mlp = ReparamGaussianPolicy(obs_dim, act_dim, hidden_sizes=(256,256)).to(device)
 
     if args.load is not None:
         pretrained_model_path = os.path.join('./save_model/' + str(args.load))
