@@ -64,7 +64,7 @@ class Agent(object):
       self.logger = logger
 
       # Main network
-      self.policy = GaussianPolicy(self.obs_dim, self.act_dim).to(self.device)
+      self.policy = GaussianPolicy(self.obs_dim, self.act_dim, self.act_limit).to(self.device)
       self.vf = MLP(self.obs_dim, 1, activation=torch.tanh).to(self.device)
       
       # Create optimizers
