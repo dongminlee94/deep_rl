@@ -187,5 +187,5 @@ class ReparamGaussianPolicy(MLP):
         
         # Make sure outputs are in correct range
         mu = mu * self.output_limit
-        pi = mu * self.output_limit
+        pi = pi * self.output_limit
         return mu, pi, log_pi
