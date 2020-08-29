@@ -89,7 +89,7 @@ class Agent(object):
       
       # Policy loss
       ratio = torch.exp(log_pi - log_pi_old)
-      clip_adv = (torch.clamp(ratio, 1.-self.clip_param, 1.+self.clip_param)*adv)
+      clip_adv = torch.clamp(ratio, 1.-self.clip_param, 1.+self.clip_param)*adv
       policy_loss = -torch.min(ratio*adv, clip_adv).mean()
 
       # A sample estimate for KL-divergence, easy to compute
