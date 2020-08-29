@@ -150,6 +150,9 @@ class Agent(object):
 
       # Keep interacting until agent reaches a terminal state.
       while not (done or step_number == max_step):
+         if self.args.render:
+            env.render()   
+
          if self.eval_mode:
             action = self.policy(torch.Tensor(obs).to(self.device))
             action = action.detach().cpu().numpy()

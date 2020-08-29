@@ -13,6 +13,12 @@ parser.add_argument('--env', type=str, default='Humanoid-v2',
                     help='choose an environment between HalfCheetah-v2, Ant-v2 and Humanoid-v2')
 parser.add_argument('--algo', type=str, default='atac', 
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
+parser.add_argument('--phase', type=str, default='train',
+                    help='choose between training phase and testing phase')
+parser.add_argument('--load', type=str, default=None,
+                    help='copy & paste the saved model name, and load it (ex. --load=Humanoid-v2_...)')
+parser.add_argument('--render', action="store_true", default=False,
+                    help='if you want to render, set this to True')
 parser.add_argument('--seed', type=int, default=0, 
                     help='seed for random number generators')
 parser.add_argument('--iterations', type=int, default=200, 
@@ -55,8 +61,14 @@ def main():
     obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
     act_limit = env.action_space.high[0]
+
+    print('---------------------------------------')
+    print('Environment:', args.env)
+    print('Algorithm:', args.algo)
     print('State dimension:', obs_dim)
     print('Action dimension:', act_dim)
+    print('Action limit:', act_limit)
+    print('---------------------------------------')
 
     # Set a random seed
     env.seed(args.seed)
@@ -116,8 +128,13 @@ def main():
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit, sample_size=4096)
 
+    if args.load is not None:
+        pretrained_model_path = os.path.join('./save_model/' + str(args.load))
+        pretrained_model = torch.load(pretrained_model_path, map_location=device)
+        agent.policy.load_state_dict(pretrained_model)
+
     # Create a SummaryWriter object by TensorBoard
-    if args.tensorboard:
+    if args.tensorboard and args.load is None:
         dir_name = 'runs/' + args.env + '/' \
                            + args.algo \
                            + '_s_' + str(args.seed) \
@@ -129,68 +146,72 @@ def main():
     total_num_steps = 0
     train_sum_returns = 0.
     train_num_episodes = 0
+    train_average_return = 0.
 
     # Main loop
     for i in range(args.iterations):
-        train_step_count = 0
-        while train_step_count <= args.steps_per_iter:
-            # Perform the training phase, during which the agent learns
-            agent.eval_mode = False
-            
-            # Run one episode
-            train_step_length, train_episode_return = agent.run(args.max_step)
-            
-            total_num_steps += train_step_length
-            train_step_count += train_step_length
-            train_sum_returns += train_episode_return
-            train_num_episodes += 1
+        # Perform the training phase, during which the agent learns
+        if args.phase == 'train':
+            train_step_count = 0
+            while train_step_count <= args.steps_per_iter:
+                agent.eval_mode = False
+                
+                # Run one episode
+                train_step_length, train_episode_return = agent.run(args.max_step)
+                
+                total_num_steps += train_step_length
+                train_step_count += train_step_length
+                train_sum_returns += train_episode_return
+                train_num_episodes += 1
 
-            train_average_return = train_sum_returns / train_num_episodes if train_num_episodes > 0 else 0.0
+                train_average_return = train_sum_returns / train_num_episodes if train_num_episodes > 0 else 0.0
 
-            # Log experiment result for training steps
-            if args.tensorboard:
-                writer.add_scalar('Train/AverageReturns', train_average_return, total_num_steps)
-                writer.add_scalar('Train/EpisodeReturns', train_episode_return, total_num_steps)
-                if args.algo == 'asac' or args.algo == 'atac':
-                    writer.add_scalar('Train/Alpha', agent.alpha, total_num_steps)
+                # Log experiment result for training steps
+                if args.tensorboard and args.load is None:
+                    writer.add_scalar('Train/AverageReturns', train_average_return, total_num_steps)
+                    writer.add_scalar('Train/EpisodeReturns', train_episode_return, total_num_steps)
+                    if args.algo == 'asac' or args.algo == 'atac':
+                        writer.add_scalar('Train/Alpha', agent.alpha, total_num_steps)
 
-        # Perform the evaluation phase -- no learning
-        agent.eval_mode = True
-        
         eval_sum_returns = 0.
         eval_num_episodes = 0
+        eval_average_return = 0.
 
-        for _ in range(10):
-            # Run one episode
-            eval_step_length, eval_episode_return = agent.run(args.max_step)
+        # Perform the evaluation phase -- no learning
+        if args.phase == 'train' or args.phase == 'test':
+            agent.eval_mode = True
 
-            eval_sum_returns += eval_episode_return
-            eval_num_episodes += 1
+            for _ in range(10):
+                # Run one episode
+                eval_step_length, eval_episode_return = agent.run(args.max_step)
 
-        eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
+                eval_sum_returns += eval_episode_return
+                eval_num_episodes += 1
 
-        # Log experiment result for evaluation steps
-        if args.tensorboard:
-            writer.add_scalar('Eval/AverageReturns', eval_average_return, total_num_steps)
-            writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, total_num_steps)
+            eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
 
-        print('---------------------------------------')
-        print('Iterations:', i)
-        print('Steps:', total_num_steps)
-        print('Episodes:', train_num_episodes)
-        print('AverageReturn:', round(train_average_return, 2))
-        print('EvalEpisodes:', eval_num_episodes)
-        print('EvalAverageReturn:', round(eval_average_return, 2))
-        print('OtherLogs:', agent.logger)
-        print('Time:', int(time.time() - start_time))
-        print('---------------------------------------')
+            # Log experiment result for evaluation steps
+            if args.tensorboard and args.load is None:
+                writer.add_scalar('Eval/AverageReturns', eval_average_return, total_num_steps)
+                writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, total_num_steps)
+
+            print('---------------------------------------')
+            print('Iterations:', i)
+            print('Steps:', total_num_steps)
+            print('Episodes:', train_num_episodes)
+            print('AverageReturn:', round(train_average_return, 2))
+            print('EvalEpisodes:', eval_num_episodes)
+            print('EvalAverageReturn:', round(eval_average_return, 2))
+            print('OtherLogs:', agent.logger)
+            print('Time:', int(time.time() - start_time))
+            print('---------------------------------------')
 
         # Save the trained model
-        if (i + 1) % 20 == 0:
-            if not os.path.exists('./tests/save_model'):
-                os.mkdir('./tests/save_model')
+        if (i + 1) >= 180 and (i + 1) % 20 == 0:
+            if not os.path.exists('./save_model'):
+                os.mkdir('./save_model')
             
-            ckpt_path = os.path.join('./tests/save_model/' + args.env + '_' + args.algo \
+            ckpt_path = os.path.join('./save_model/' + args.env + '_' + args.algo \
                                                                       + '_s_' + str(args.seed) \
                                                                       + '_i_' + str(i) \
                                                                       + '_tr_' + str(round(train_average_return, 2)) \
