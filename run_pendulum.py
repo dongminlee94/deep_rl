@@ -147,7 +147,7 @@ def main():
 
         # Perform the evaluation phase -- no learning
         if args.phase == 'train' or args.phase == 'test':
-            if i + 1 > 0 and i + 1 % args.eval_per_train == 0:
+            if (i + 1) % args.eval_per_train == 0:
                 agent.eval_mode = True
 
                 for _ in range(100):
@@ -183,6 +183,7 @@ def main():
                     
                     ckpt_path = os.path.join('./save_model/' + args.env + '_' + args.algo \
                                                                         + '_s_' + str(args.seed) \
+                                                                        + '_i_' + str(i + 1) \
                                                                         + '_ep_' + str(train_num_episodes) \
                                                                         + '_tr_' + str(round(train_average_return, 2)) \
                                                                         + '_er_' + str(round(eval_average_return, 2)) + '.pt')
