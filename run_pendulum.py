@@ -27,7 +27,7 @@ parser.add_argument('--eval_per_train', type=int, default=100,
                     help='evaluation number per training')
 parser.add_argument('--max_step', type=int, default=200,
                     help='max episode step')
-parser.add_argument('--threshold_average_return', type=int, default=-230,
+parser.add_argument('--threshold_return', type=int, default=-230,
                     help='solved requirement for success in given environment')
 parser.add_argument('--tensorboard', type=bool, default=True)
 parser.add_argument('--gpu_index', type=int, default=0)
@@ -175,14 +175,13 @@ def main():
                 print('---------------------------------------')
 
                 # Save the trained model
-                if eval_average_return >= args.threshold_average_return:
+                if eval_average_return >= args.threshold_return:
                     if not os.path.exists('./save_model'):
                         os.mkdir('./save_model')
                     
                     ckpt_path = os.path.join('./save_model/' + args.env + '_' + args.algo \
                                                                         + '_s_' + str(args.seed) \
                                                                         + '_i_' + str(i + 1) \
-                                                                        + '_ep_' + str(train_num_episodes) \
                                                                         + '_tr_' + str(round(train_average_return, 2)) \
                                                                         + '_er_' + str(round(eval_average_return, 2)) + '.pt')
                     
