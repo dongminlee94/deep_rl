@@ -214,10 +214,10 @@ def main():
                 os.mkdir('./save_model')
             
             ckpt_path = os.path.join('./save_model/' + args.env + '_' + args.algo \
-                                                                      + '_s_' + str(args.seed) \
-                                                                      + '_i_' + str(i + 1) \
-                                                                      + '_tr_' + str(round(train_average_return, 2)) \
-                                                                      + '_er_' + str(round(eval_average_return, 2)) + '.pt')
+                                                                + '_s_' + str(args.seed) \
+                                                                + '_i_' + str(i + 1) \
+                                                                + '_tr_' + str(round(train_average_return, 2)) \
+                                                                + '_er_' + str(round(eval_average_return, 2)) + '.pt')
             
             torch.save(agent.policy.state_dict(), ckpt_path)
 
