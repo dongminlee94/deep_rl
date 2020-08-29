@@ -15,7 +15,7 @@ parser.add_argument('--algo', type=str, default='atac',
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--phase', type=str, default='train',
                     help='choose between training phase and testing phase')
-parser.add_argument('--render', action="store_true", default=False,
+parser.add_argument('--render', type=bool, default=False,
                     help='if you want to render, set this to True')
 parser.add_argument('--load', type=str, default=None,
                     help='copy & paste the saved model name, and load it')
@@ -23,7 +23,7 @@ parser.add_argument('--seed', type=int, default=0,
                     help='seed for random number generators')
 parser.add_argument('--iterations', type=int, default=1000, 
                     help='iterations to run and train agent')
-parser.add_argument('--eval_per_train', type=int, default=50, 
+parser.add_argument('--eval_per_train', type=int, default=100, 
                     help='evaluation number per training')
 parser.add_argument('--max_step', type=int, default=200,
                     help='max episode step')
@@ -99,6 +99,7 @@ def main():
     else: # vpg, npg, trpo, ppo
         agent = Agent(env, args, device, obs_dim, act_dim, act_limit)
 
+    # If we have a saved model, load it
     if args.load is not None:
         pretrained_model_path = os.path.join('./save_model/' + str(args.load))
         pretrained_model = torch.load(pretrained_model_path, map_location=device)
@@ -117,7 +118,8 @@ def main():
     train_num_steps = 0
     train_sum_returns = 0.
     train_num_episodes = 0
-    train_average_return = 0.
+    eval_sum_returns = 0.
+    eval_num_episodes = 0
 
     # Main loop
     for i in range(args.iterations):
@@ -141,29 +143,25 @@ def main():
                 if args.algo == 'asac' or args.algo == 'atac':
                     writer.add_scalar('Train/Alpha', agent.alpha, i)
 
-        eval_sum_returns = 0.
-        eval_num_episodes = 0
-        eval_average_return = 0.
-
         # Perform the evaluation phase -- no learning
-        if args.phase == 'train' or args.phase == 'test':
-            if (i + 1) % args.eval_per_train == 0:
-                agent.eval_mode = True
+        if (i + 1) % args.eval_per_train == 0:
+            agent.eval_mode = True
 
-                for _ in range(100):
-                    # Run one episode
-                    eval_step_length, eval_episode_return = agent.run(args.max_step)
+            for _ in range(100):
+                # Run one episode
+                eval_step_length, eval_episode_return = agent.run(args.max_step)
 
-                    eval_sum_returns += eval_episode_return
-                    eval_num_episodes += 1
+                eval_sum_returns += eval_episode_return
+                eval_num_episodes += 1
 
-                eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
+            eval_average_return = eval_sum_returns / eval_num_episodes if eval_num_episodes > 0 else 0.0
 
-                # Log experiment result for evaluation episodes
-                if args.tensorboard and args.load is None:
-                    writer.add_scalar('Eval/AverageReturns', eval_average_return, i)
-                    writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, i)
+            # Log experiment result for evaluation episodes
+            if args.tensorboard and args.load is None:
+                writer.add_scalar('Eval/AverageReturns', eval_average_return, i)
+                writer.add_scalar('Eval/EpisodeReturns', eval_episode_return, i)
 
+            if args.phase == 'train':
                 print('---------------------------------------')
                 print('Steps:', train_num_steps)
                 print('Episodes:', train_num_episodes)
@@ -189,6 +187,13 @@ def main():
                                                                         + '_er_' + str(round(eval_average_return, 2)) + '.pt')
                     
                     torch.save(agent.policy.state_dict(), ckpt_path)
+            elif args.phase == 'test':
+                print('---------------------------------------')
+                print('EvalEpisodes:', eval_num_episodes)
+                print('EvalEpisodeReturn:', round(eval_episode_return, 2))
+                print('EvalAverageReturn:', round(eval_average_return, 2))
+                print('Time:', int(time.time() - start_time))
+                print('---------------------------------------')
 
 if __name__ == "__main__":
     main()
