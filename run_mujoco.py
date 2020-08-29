@@ -199,8 +199,10 @@ def main():
             print('Iterations:', i)
             print('Steps:', total_num_steps)
             print('Episodes:', train_num_episodes)
+            print('SumReturn:', round(train_sum_returns, 2))
             print('AverageReturn:', round(train_average_return, 2))
             print('EvalEpisodes:', eval_num_episodes)
+            print('EvalSumReturn:', round(eval_sum_returns, 2))
             print('EvalAverageReturn:', round(eval_average_return, 2))
             print('OtherLogs:', agent.logger)
             print('Time:', int(time.time() - start_time))
@@ -213,7 +215,7 @@ def main():
             
             ckpt_path = os.path.join('./save_model/' + args.env + '_' + args.algo \
                                                                       + '_s_' + str(args.seed) \
-                                                                      + '_i_' + str(i) \
+                                                                      + '_i_' + str(i + 1) \
                                                                       + '_tr_' + str(round(train_average_return, 2)) \
                                                                       + '_er_' + str(round(eval_average_return, 2)) + '.pt')
             
