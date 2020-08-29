@@ -77,8 +77,7 @@ The repository's high-level structure is:
     ├── results  
         ├── data 
         └── graphs        
-    ├── tests
-        └── save_model
+    └── save_model
 
 ### 1) To train the agents on the environments
 
@@ -97,10 +96,15 @@ If you want to change configurations of the agents, follow this step:
 python run_mujoco.py \
     --env=Humanoid-v2 \
     --algo=atac \
+    --phase=train \
+    --load=None \
+    --render=False \
     --seed=0 \
     --iterations=200 \
     --steps_per_iter=5000 \
-    --max_step=1000
+    --max_step=1000 \
+    --tensorboard=True \
+    --gpu_index=0
 ```
 
 ### 2) To watch the learned agents on the above environments
@@ -108,8 +112,18 @@ python run_mujoco.py \
 To watch all the learned agents on MuJoCo environments, follow these steps:
 
 ```commandline
-cd tests
-python mujoco_test.py --load=envname_algoname_...
+python run_mujoco.py \
+    --env=Humanoid-v2 \
+    --algo=atac \
+    --phase=test \
+    --load=envname_algoname_... \
+    --render=True \
+    --seed=0 \
+    --iterations=200 \
+    --steps_per_iter=5000 \
+    --max_step=1000 \
+    --tensorboard=False \
+    --gpu_index=0
 ```
 
-You should copy the saved model name in `tests/save_model/envname_algoname_...` and paste the copied name in `envname_algoname_...`. So the saved model will be load.
+You should copy the saved model name in `save_model/envname_algoname_...` and paste the copied name in `envname_algoname_...`. So the saved model will be load.
