@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,6 +22,7 @@ class MLP(nn.Module):
                  activation=F.relu, 
                  output_activation=identity,
                  use_output_layer=True,
+                 use_actor=False,
     ):
         super(MLP, self).__init__()
 
@@ -31,6 +33,7 @@ class MLP(nn.Module):
         self.activation = activation
         self.output_activation = output_activation
         self.use_output_layer = use_output_layer
+        self.use_actor = use_actor
 
         # Set hidden layers
         self.hidden_layers = nn.ModuleList()
@@ -50,7 +53,9 @@ class MLP(nn.Module):
         for hidden_layer in self.hidden_layers:
             x = self.activation(hidden_layer(x))
         x = self.output_activation(self.output_layer(x))
-        return x * self.output_limit   # Make sure output is in correct range
+        # If the network is used as actor network, make sure output is in correct range
+        x = x * self.output_limit if self.use_actor else x   
+        return x
 
 
 """
@@ -83,6 +88,7 @@ class GaussianPolicy(MLP):
     def __init__(self, 
                  input_size, 
                  output_size, 
+                 output_limit=1.0,
                  hidden_sizes=(64,64),
                  activation=torch.tanh,
     ):
@@ -93,15 +99,22 @@ class GaussianPolicy(MLP):
             activation=activation,
         )
 
-    def forward(self, x, pi=None):
+        self.output_limit = output_limit
+        self.log_std = np.ones(output_size, dtype=np.float32)
+        self.log_std = torch.nn.Parameter(torch.Tensor(self.log_std))
+
+    def forward(self, x, pi=None, use_pi=True):
         mu = super(GaussianPolicy, self).forward(x)
-        log_std = torch.zeros_like(mu)
-        std = torch.exp(log_std)
-        
+        std = torch.exp(self.log_std)
+
         dist = Normal(mu, std)
-        if pi == None:
+        if use_pi:
             pi = dist.sample()
         log_pi = dist.log_prob(pi).sum(dim=-1)
+
+        # Make sure outputs are in correct range
+        mu = mu * self.output_limit
+        pi = pi * self.output_limit
         return mu, std, pi, log_pi
 
 
@@ -183,5 +196,5 @@ class ReparamGaussianPolicy(MLP):
         
         # Make sure outputs are in correct range
         mu = mu * self.output_limit
-        pi = mu * self.output_limit
+        pi = pi * self.output_limit
         return mu, pi, log_pi
