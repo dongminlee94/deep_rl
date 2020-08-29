@@ -15,10 +15,10 @@ parser.add_argument('--algo', type=str, default='atac',
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--phase', type=str, default='train',
                     help='choose between training phase and testing phase')
-parser.add_argument('--load', type=str, default=None,
-                    help='copy & paste the saved model name, and load it')
 parser.add_argument('--render', action="store_true", default=False,
                     help='if you want to render, set this to True')
+parser.add_argument('--load', type=str, default=None,
+                    help='copy & paste the saved model name, and load it')
 parser.add_argument('--seed', type=int, default=0, 
                     help='seed for random number generators')
 parser.add_argument('--iterations', type=int, default=200, 
@@ -199,10 +199,10 @@ def main():
             print('Iterations:', i)
             print('Steps:', total_num_steps)
             print('Episodes:', train_num_episodes)
-            print('SumReturn:', round(train_sum_returns, 2))
-            print('AverageReturn:', round(train_average_return, 2))
+            print('SumReturn:', round(train_episode_return, 2))
+            print('EpisodeReturn:', round(train_average_return, 2))
             print('EvalEpisodes:', eval_num_episodes)
-            print('EvalSumReturn:', round(eval_sum_returns, 2))
+            print('EvalEpisodeReturn:', round(eval_episode_return, 2))
             print('EvalAverageReturn:', round(eval_average_return, 2))
             print('OtherLogs:', agent.logger)
             print('Time:', int(time.time() - start_time))
