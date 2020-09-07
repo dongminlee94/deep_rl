@@ -97,8 +97,8 @@ python run_mujoco.py \
     --env=Humanoid-v2 \
     --algo=atac \
     --phase=train \
-    --load=None \
     --render=False \
+    --load=None \
     --seed=0 \
     --iterations=200 \
     --steps_per_iter=5000 \
@@ -116,8 +116,8 @@ python run_mujoco.py \
     --env=Humanoid-v2 \
     --algo=atac \
     --phase=test \
-    --load=envname_algoname_... \
     --render=True \
+    --load=envname_algoname_... \
     --seed=0 \
     --iterations=200 \
     --steps_per_iter=5000 \
