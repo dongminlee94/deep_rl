@@ -15,7 +15,7 @@ parser.add_argument('--algo', type=str, default='atac',
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, asac, tac, atac')
 parser.add_argument('--phase', type=str, default='train',
                     help='choose between training phase and testing phase')
-parser.add_argument('--render', type=bool, default=False,
+parser.add_argument('--render', action='store_true', default=False,
                     help='if you want to render, set this to True')
 parser.add_argument('--load', type=str, default=None,
                     help='copy & paste the saved model name, and load it')
@@ -29,7 +29,7 @@ parser.add_argument('--max_step', type=int, default=200,
                     help='max episode step')
 parser.add_argument('--threshold_return', type=int, default=-230,
                     help='solved requirement for success in given environment')
-parser.add_argument('--tensorboard', type=bool, default=True)
+parser.add_argument('--tensorboard', action='store_true', default=True)
 parser.add_argument('--gpu_index', type=int, default=0)
 args = parser.parse_args()
 device = torch.device('cuda', index=args.gpu_index) if torch.cuda.is_available() else torch.device('cpu')
