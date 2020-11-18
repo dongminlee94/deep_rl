@@ -29,7 +29,6 @@ class Agent(object):
                 sample_size=2048,
                 policy_lr=1e-3,
                 vf_lr=1e-3,
-                gradient_clip=0.5,
                 train_vf_iters=80,
                 eval_mode=False,
                 policy_losses=list(),
@@ -76,15 +75,26 @@ class Agent(object):
       act = batch['act'].detach()
       ret = batch['ret']
       adv = batch['adv']
-      log_pi_old = batch['log_pi'].detach()
       
       if 0: # Check shape of experiences
          print("obs", obs.shape)
          print("act", act.shape)
          print("ret", ret.shape)
          print("adv", adv.shape)
-         print("log_pi_old", log_pi_old.shape)
 
+      # Prediction logπ(s)
+      _, _, _, log_pi_old = self.policy(obs, act, use_pi=False)
+      log_pi_old = log_pi_old.detach()
+      _, _, _, log_pi = self.policy(obs, act, use_pi=False)
+      
+      # Policy loss
+      policy_loss = -(log_pi*adv).mean()
+
+      # Update policy network parameter
+      self.policy_optimizer.zero_grad()
+      policy_loss.backward()
+      self.policy_optimizer.step()
+      
       # Update value network parameter
       for _ in range(self.train_vf_iters):
          # Prediction V(s)
@@ -95,20 +105,7 @@ class Agent(object):
 
          self.vf_optimizer.zero_grad()
          vf_loss.backward()
-         nn.utils.clip_grad_norm_(self.vf.parameters(), self.gradient_clip)
          self.vf_optimizer.step()
-      
-      # Prediction logπ(s)
-      _, _, _, log_pi = self.policy(obs, act, use_pi=False)
-      
-      # Policy loss
-      policy_loss = -(log_pi_old*adv).mean()
-
-      # Update policy network parameter
-      self.policy_optimizer.zero_grad()
-      policy_loss.backward()
-      nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip)
-      self.policy_optimizer.step()
 
       # A sample estimate for KL-divergence, easy to compute
       approx_kl = (log_pi_old - log_pi).mean()     
@@ -144,7 +141,7 @@ class Agent(object):
 
             # Add experience to buffer
             v = self.vf(torch.Tensor(obs).to(self.device))
-            self.buffer.add(obs, action, reward, done, log_pi, v)
+            self.buffer.add(obs, action, reward, done, v)
             
             # Start training when the number of experience is equal to sample size
             if self.steps == self.sample_size:
