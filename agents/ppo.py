@@ -109,15 +109,6 @@ class Agent(object):
       v_old = self.vf(obs).squeeze(1)
       v_old = v_old.detach()
 
-      # Train value with multiple steps of gradient descent
-      for i in range(self.train_vf_iters):
-         vf_loss = self.compute_vf_loss(obs, ret, v_old)
-
-         # Update value network parameter
-         self.vf_optimizer.zero_grad()
-         vf_loss.backward()
-         self.vf_optimizer.step()
-      
       # Train policy with multiple steps of gradient descent
       for i in range(self.train_policy_iters):
          policy_loss, kl = self.compute_policy_loss(obs, act, adv, log_pi_old)
@@ -130,6 +121,15 @@ class Agent(object):
          self.policy_optimizer.zero_grad()
          policy_loss.backward()
          self.policy_optimizer.step()
+      
+      # Train value with multiple steps of gradient descent
+      for i in range(self.train_vf_iters):
+         vf_loss = self.compute_vf_loss(obs, ret, v_old)
+
+         # Update value network parameter
+         self.vf_optimizer.zero_grad()
+         vf_loss.backward()
+         self.vf_optimizer.step()
 
       # Save losses
       self.policy_losses.append(policy_loss.item())

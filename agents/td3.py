@@ -144,11 +144,6 @@ class Agent(object):
       qf2_loss = F.mse_loss(q2, q_backup.detach())
       qf_loss = qf1_loss + qf2_loss
 
-      # Update two Q-network parameter
-      self.qf_optimizer.zero_grad()
-      qf_loss.backward()
-      self.qf_optimizer.step()
-      
       # Delayed policy update
       if self.steps % self.policy_delay == 0:
          # Update policy network parameter
@@ -160,6 +155,11 @@ class Agent(object):
          soft_target_update(self.policy, self.policy_target)
          soft_target_update(self.qf1, self.qf1_target)
          soft_target_update(self.qf2, self.qf2_target)
+      
+      # Update two Q-network parameter
+      self.qf_optimizer.zero_grad()
+      qf_loss.backward()
+      self.qf_optimizer.step()
          
       # Save losses
       self.policy_losses.append(policy_loss.item())

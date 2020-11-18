@@ -121,17 +121,17 @@ class Agent(object):
       policy_loss = -q_pi.mean()
       qf_loss = F.mse_loss(q, q_backup.detach())
 
-      # Update Q-function network parameter
-      self.qf_optimizer.zero_grad()
-      qf_loss.backward()
-      nn.utils.clip_grad_norm_(self.qf.parameters(), self.gradient_clip_qf)
-      self.qf_optimizer.step()
-      
       # Update policy network parameter
       self.policy_optimizer.zero_grad()
       policy_loss.backward()
       nn.utils.clip_grad_norm_(self.policy.parameters(), self.gradient_clip_policy)
       self.policy_optimizer.step()
+      
+      # Update Q-function network parameter
+      self.qf_optimizer.zero_grad()
+      qf_loss.backward()
+      nn.utils.clip_grad_norm_(self.qf.parameters(), self.gradient_clip_qf)
+      self.qf_optimizer.step()
 
       # Polyak averaging for target parameter
       soft_target_update(self.policy, self.policy_target)

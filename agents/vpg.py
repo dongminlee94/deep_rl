@@ -50,7 +50,6 @@ class Agent(object):
       self.sample_size = sample_size
       self.policy_lr = policy_lr
       self.vf_lr = vf_lr
-      self.gradient_clip = gradient_clip
       self.train_vf_iters = train_vf_iters
       self.eval_mode = eval_mode
       self.policy_losses = policy_losses
@@ -82,6 +81,18 @@ class Agent(object):
          print("ret", ret.shape)
          print("adv", adv.shape)
 
+      # Update value network parameter
+      for _ in range(self.train_vf_iters):
+         # Prediction V(s)
+         v = self.vf(obs).squeeze(1)
+         
+         # Value loss
+         vf_loss = F.mse_loss(v, ret)
+
+         self.vf_optimizer.zero_grad()
+         vf_loss.backward()
+         self.vf_optimizer.step()
+      
       # Prediction logπ(s)
       _, _, _, log_pi_old = self.policy(obs, act, use_pi=False)
       log_pi_old = log_pi_old.detach()
@@ -95,18 +106,6 @@ class Agent(object):
       policy_loss.backward()
       self.policy_optimizer.step()
       
-      # Update value network parameter
-      for _ in range(self.train_vf_iters):
-         # Prediction V(s)
-         v = self.vf(obs).squeeze(1)
-         
-         # Value loss
-         vf_loss = F.mse_loss(v, ret)
-
-         self.vf_optimizer.zero_grad()
-         vf_loss.backward()
-         self.vf_optimizer.step()
-
       # A sample estimate for KL-divergence, easy to compute
       approx_kl = (log_pi_old - log_pi).mean()     
 

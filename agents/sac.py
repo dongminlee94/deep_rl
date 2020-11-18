@@ -147,15 +147,15 @@ class Agent(object):
       qf2_loss = F.mse_loss(q2, q_backup.detach())
       qf_loss = qf1_loss + qf2_loss
 
-      # Update two Q-network parameter
-      self.qf_optimizer.zero_grad()
-      qf_loss.backward()
-      self.qf_optimizer.step()
-
       # Update policy network parameter
       self.policy_optimizer.zero_grad()
       policy_loss.backward()
       self.policy_optimizer.step()
+      
+      # Update two Q-network parameter
+      self.qf_optimizer.zero_grad()
+      qf_loss.backward()
+      self.qf_optimizer.step()
 
       # If automatic entropy tuning is True, update alpha
       if self.automatic_entropy_tuning:
