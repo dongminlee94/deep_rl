@@ -1,6 +1,6 @@
 # Deep Reinforcement Learning (DRL) Algorithms with PyTorch
 
-This repository contains PyTorch implementations of deep reinforcement learning algorithms. This implementation uses PyTorch. For a TensorFlow implementation of algorithms, take a look at [tsallis_actor_critic_mujoco](https://github.com/rllab-snu/tsallis_actor_critic_mujoco).
+This repository contains PyTorch implementations of deep reinforcement learning algorithms.
 
 ## Algorithms Implemented
 
@@ -14,52 +14,59 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 8. Deep Deterministic Policy Gradient (DDPG) <sub><sup> ([T. Lillicrap et al. 2015](https://arxiv.org/abs/1509.02971)) </sup></sub>
 9. Twin Delayed DDPG (TD3) <sub><sup> ([S. Fujimoto et al. 2018](https://arxiv.org/abs/1802.09477)) </sup></sub>
 10. Soft Actor-Critic (SAC) <sub><sup> ([T. Haarnoja et al. 2018](https://arxiv.org/abs/1801.01290)) </sup></sub>
-11. Automating entropy adjustment on SAC (ASAC) <sub><sup> ([T. Haarnoja et al. 2018](https://arxiv.org/abs/1812.05905)) </sup></sub>
-12. Tsallis Actor-Critic (TAC) <sub><sup> ([K. Lee et al. 2019](https://arxiv.org/abs/1902.00137)) </sup></sub>
-13. Automating entropy adjustment on TAC (ATAC)
+11. SAC with automatic entropy adjustment (SAC-AEA) <sub><sup> ([T. Haarnoja et al. 2018](https://arxiv.org/abs/1812.05905)) </sup></sub>
 
 ## Environments Implemented
 
-1. CartPole-v1 <sub><sup> (as described in [here](https://gym.openai.com/envs/CartPole-v1/)) </sup></sub>
-2. Pendulum-v0 <sub><sup> (as described in [here](https://gym.openai.com/envs/Pendulum-v0/)) </sup></sub>
-3. MuJoCo environments (HalfCheetah-v2, Ant-v2, Humanoid-v2, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#mujoco)) </sup></sub>
+1. Classic control environments (CartPole-v1, Pendulum-v0, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#classic_control)) </sup></sub>
+2. MuJoCo environments (Hopper-v2, HalfCheetah-v2, Ant-v2, Humanoid-v2, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#mujoco)) </sup></sub>
+3. PyBullet environments (HopperBulletEnv-v0, HalfCheetahBulletEnv-v0, AntBulletEnv-v0, HumanoidBulletEnv-v0, etc.) <sub><sup> (as described in [here](https://github.com/bulletphysics/bullet3/tree/master/examples/pybullet/gym/pybullet_envs)) </sup></sub>
 
-## Results
+## Results (MuJoCo, PyBullet)
 
-### CartPole-v1
+### MuJoCo environments
 
-- Observation space: 4
-- Action space: 2
+#### Hopper-v2
 
-<img src="results/graphs/cartpole.png" width="1000"/>
+- Observation space: 8
+- Action space: 3
 
-### Pendulum-v0
-
-- Observation space: 3
-- Action space: 1
-
-<img src="results/graphs/pendulum.png" width="1000"/>
-
-### HalfCheetah-v2
+#### HalfCheetah-v2
 
 - Observation space: 17
 - Action space: 6
 
-<img src="results/graphs/halfcheetah.png" width="1000"/>
-
-### Ant-v2
+#### Ant-v2
 
 - Observation space: 111
 - Action space: 8
 
-<img src="results/graphs/ant.png" width="1000"/>
-
-### Humanoid-v2
+#### Humanoid-v2
 
 - Observation space: 376
 - Action space: 17
 
-<img src="results/graphs/humanoid.png" width="1000"/>
+### PyBullet environments
+
+#### HopperBulletEnv-v0
+
+- Observation space: 15
+- Action space: 3
+
+#### HalfCheetahBulletEnv-v0
+
+- Observation space: 26
+- Action space: 6
+
+#### AntBulletEnv-v0
+
+- Observation space: 28
+- Action space: 8
+
+#### HumanoidBulletEnv-v0
+
+- Observation space: 44
+- Action space: 17
 
 ## Requirements
 
@@ -67,6 +74,7 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 - [TensorBoard](https://pytorch.org/docs/stable/tensorboard.html)
 - [gym](https://github.com/openai/gym)
 - [mujoco-py](https://github.com/openai/mujoco-py)
+- [PyBullet](https://pybullet.org/wordpress/)
 
 ## Usage
 
@@ -81,21 +89,21 @@ The repository's high-level structure is:
 
 ### 1) To train the agents on the environments
 
-To train all the different agents on MuJoCo environments, follow these steps:
+To train all the different agents on PyBullet environments, follow these steps:
 
 ```commandline
 git clone https://github.com/dongminlee94/deep_rl.git
 cd deep_rl
-python run_mujoco.py
+python run_bullet.py
 ```
 
-For other environments, change the last line to `run_cartpole.py`, `run_pendulum.py`.
+For other environments, change the last line to `run_cartpole.py`, `run_pendulum.py`, `run_mujoco.py`.
 
 If you want to change configurations of the agents, follow this step:
 ```commandline
-python run_mujoco.py \
-    --env=Humanoid-v2 \
-    --algo=atac \
+python run_bullet.py \
+    --env=HumanoidBulletEnv-v0 \
+    --algo=sac-aea \
     --phase=train \
     --render=False \
     --load=None \
@@ -109,12 +117,12 @@ python run_mujoco.py \
 
 ### 2) To watch the learned agents on the above environments
 
-To watch all the learned agents on MuJoCo environments, follow these steps:
+To watch all the learned agents on PyBullet environments, follow these steps:
 
 ```commandline
-python run_mujoco.py \
-    --env=Humanoid-v2 \
-    --algo=atac \
+python run_bullet.py \
+    --env=HumanoidBulletEnv-v0 \
+    --algo=sac-aea \
     --phase=test \
     --render=True \
     --load=envname_algoname_... \
