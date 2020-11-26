@@ -11,8 +11,7 @@ from agents.common.networks import *
 
 class Agent(object):
    """
-   An implementation of agents for Soft Actor-Critic (SAC), Automatic entropy adjustment on SAC (ASAC), 
-   Tsallis Actor-Critic (TAC) and Automatic entropy adjustment on TAC (ATAC).
+   An implementation of agents for Soft Actor-Critic (SAC), SAC with automatic entropy adjustment (SAC-AEA).
    """
 
    def __init__(self,
@@ -27,8 +26,6 @@ class Agent(object):
                 train_after=1000,
                 gamma=0.99,
                 alpha=0.2,
-                log_type='log',
-                entropic_index=1.5,
                 automatic_entropy_tuning=False,
                 hidden_sizes=(128,128),
                 buffer_size=int(1e4),
@@ -54,8 +51,6 @@ class Agent(object):
       self.train_after = train_after
       self.gamma = gamma
       self.alpha = alpha
-      self.log_type = log_type
-      self.entropic_index = entropic_index
       self.automatic_entropy_tuning = automatic_entropy_tuning
       self.hidden_sizes = hidden_sizes
       self.buffer_size = buffer_size
@@ -71,10 +66,7 @@ class Agent(object):
 
       # Main network
       self.policy = ReparamGaussianPolicy(self.obs_dim, self.act_dim, self.act_limit,
-                                                      hidden_sizes=self.hidden_sizes, 
-                                                      log_type=self.log_type, 
-                                                      q=self.entropic_index,
-                                                      device=self.device).to(self.device)
+                                          hidden_sizes=self.hidden_sizes).to(self.device)
       self.qf1 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       self.qf2 = FlattenMLP(self.obs_dim+self.act_dim, 1, hidden_sizes=self.hidden_sizes).to(self.device)
       # Target network
