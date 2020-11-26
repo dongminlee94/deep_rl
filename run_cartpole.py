@@ -129,6 +129,7 @@ def main():
 
             if args.phase == 'train':
                 print('---------------------------------------')
+                print('Iterations:', i + 1)
                 print('Steps:', train_num_steps)
                 print('Episodes:', train_num_episodes)
                 print('EpisodeReturn:', round(train_episode_return, 2))
