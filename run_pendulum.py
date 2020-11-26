@@ -118,8 +118,6 @@ def main():
     train_num_steps = 0
     train_sum_returns = 0.
     train_num_episodes = 0
-    eval_sum_returns = 0.
-    eval_num_episodes = 0
 
     # Main loop
     for i in range(args.iterations):
@@ -145,6 +143,8 @@ def main():
 
         # Perform the evaluation phase -- no learning
         if (i + 1) % args.eval_per_train == 0:
+            eval_sum_returns = 0.
+            eval_num_episodes = 0
             agent.eval_mode = True
 
             for _ in range(100):

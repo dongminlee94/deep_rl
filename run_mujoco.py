@@ -147,14 +147,13 @@ def main():
     total_num_steps = 0
     train_sum_returns = 0.
     train_num_episodes = 0
-    eval_sum_returns = 0.
-    eval_num_episodes = 0
 
     # Main loop
     for i in range(args.iterations):
         # Perform the training phase, during which the agent learns
         if args.phase == 'train':
             train_step_count = 0
+
             while train_step_count <= args.steps_per_iter:
                 agent.eval_mode = False
                 
@@ -176,6 +175,8 @@ def main():
                         writer.add_scalar('Train/Alpha', agent.alpha, total_num_steps)
 
         # Perform the evaluation phase -- no learning
+        eval_sum_returns = 0.
+        eval_num_episodes = 0
         agent.eval_mode = True
 
         for _ in range(10):
