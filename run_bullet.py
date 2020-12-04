@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Configurations
 parser = argparse.ArgumentParser(description='RL algorithms with PyTorch in PyBullet environments')
-parser.add_argument('--env', type=str, default='HumanoidBulletEnv-v0', 
+parser.add_argument('--env', type=str, default='HopperBulletEnv-v0', 
                     help='choose an environment between HopperBulletEnv-v0, HalfCheetahBulletEnv-v0, AntBulletEnv-v0 and HumanoidBulletEnv-v0')
 parser.add_argument('--algo', type=str, default='sac-aea', 
                     help='select an algorithm among vpg, npg, trpo, ppo, ddpg, td3, sac, sac-aea')
@@ -146,7 +146,7 @@ def main():
                 if args.tensorboard and args.load is None:
                     writer.add_scalar('Train/AverageReturns', train_average_return, total_num_steps)
                     writer.add_scalar('Train/EpisodeReturns', train_episode_return, total_num_steps)
-                    if args.algo == 'asac' or args.algo == 'atac':
+                    if args.algo == 'sac-aea':
                         writer.add_scalar('Train/Alpha', agent.alpha, total_num_steps)
 
         # Perform the evaluation phase -- no learning
