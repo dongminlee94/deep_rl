@@ -1,7 +1,6 @@
 # Deep Reinforcement Learning (DRL) Algorithms with PyTorch
 
-This repository contains PyTorch implementations of deep reinforcement learning algorithms.
-**The repository will soon be updated including the PyBullet environments!**
+This repository contains PyTorch implementations of deep reinforcement learning algorithms. **The repository will soon be updated including the PyBullet environments!**
 
 ## Algorithms Implemented
 
