@@ -102,7 +102,7 @@ For other environments, change the last line to `run_cartpole.py`, `run_pendulum
 If you want to change configurations of the agents, follow this step:
 ```commandline
 python run_bullet.py \
-    --env=HumanoidBulletEnv-v0 \
+    --env=HumanoidDeepMimicWalkBulletEnv-v1 \
     --algo=sac-aea \
     --phase=train \
     --render=False \
@@ -121,7 +121,7 @@ To watch all the learned agents on PyBullet environments, follow these steps:
 
 ```commandline
 python run_bullet.py \
-    --env=HumanoidBulletEnv-v0 \
+    --env=HumanoidDeepMimicWalkBulletEnv-v1 \
     --algo=sac-aea \
     --phase=test \
     --render=True \
