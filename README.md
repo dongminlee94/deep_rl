@@ -1,6 +1,7 @@
 # Deep Reinforcement Learning (DRL) Algorithms with PyTorch
 
 This repository contains PyTorch implementations of deep reinforcement learning algorithms.
+**The repository will soon be updated including the PyBullet environments!**
 
 ## Algorithms Implemented
 
@@ -20,7 +21,7 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 
 1. Classic control environments (CartPole-v1, Pendulum-v0, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#classic_control)) </sup></sub>
 2. MuJoCo environments (Hopper-v2, HalfCheetah-v2, Ant-v2, Humanoid-v2, etc.) <sub><sup> (as described in [here](https://gym.openai.com/envs/#mujoco)) </sup></sub>
-3. **PyBullet environments (HopperBulletEnv-v0, HalfCheetahBulletEnv-v0, AntBulletEnv-v0, HumanoidBulletEnv-v0, etc.)** <sub><sup> (as described in [here](https://github.com/bulletphysics/bullet3/tree/master/examples/pybullet/gym/pybullet_envs)) </sup></sub>
+3. **PyBullet environments (HopperBulletEnv-v0, HalfCheetahBulletEnv-v0, AntBulletEnv-v0, HumanoidDeepMimicWalkBulletEnv-v1 etc.)** <sub><sup> (as described in [here](https://github.com/bulletphysics/bullet3/tree/master/examples/pybullet/gym/pybullet_envs)) </sup></sub>
 
 ## Results (MuJoCo, PyBullet)
 
@@ -63,10 +64,10 @@ This repository contains PyTorch implementations of deep reinforcement learning 
 - Observation space: 28
 - Action space: 8
 
-#### HumanoidBulletEnv-v0
+#### HumanoidDeepMimicWalkBulletEnv-v1
 
-- Observation space: 44
-- Action space: 17
+- Observation space: 197
+- Action space: 36
 
 ## Requirements
 
