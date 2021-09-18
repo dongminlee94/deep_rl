@@ -7,6 +7,7 @@ The main module that runs an RL algorithm in a certain environment
 import datetime
 import os
 import time
+from typing import Dict
 
 import gym
 import numpy as np
@@ -17,16 +18,14 @@ import yaml
 if __name__ == "__main__":
     # Main configuration setup
     with open(os.path.join("configs", "main_config.yaml"), "r") as file:
-        main_config = yaml.load(file, Loader=yaml.FullLoader)
-
-    main_config["is_discrete_env"] = False
+        main_config: Dict[str, bool] = yaml.load(file, Loader=yaml.FullLoader)
 
     # Environment setup
     if main_config["is_discrete_env"]:  # Discrete environment
         env = gym.make("CartPole-v1")  # 4, 2
 
-        obs_dim = env.observation_space.shape[0]
-        act_num = env.action_space.n
+        obs_dim: int = env.observation_space.shape[0]
+        act_num: int = env.action_space.n
         print(f"Observation dimension: {obs_dim}\n" f"Action number: {act_num}")
     else:  # Continuous environments
         # env = gym.make('Pendulum-v0')  # 3, 1
@@ -39,7 +38,7 @@ if __name__ == "__main__":
         env = bullet.make("HalfCheetahBulletEnv-v0")  # 26, 6
 
         obs_dim = env.observation_space.shape[0]
-        act_dim = env.action_space.shape[0]
+        act_dim: int = env.action_space.shape[0]
         print(f"Observation dimension: {obs_dim}\n" f"Action dimension: {act_dim}")
 
     print(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
