@@ -1,0 +1,5 @@
+# -*- coding: utf-8 -*-
+
+# The Configuration used to main module
+
+is_discrete_env: True

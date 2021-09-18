@@ -2,6 +2,20 @@
 
 This repository contains PyTorch implementations of deep reinforcement learning algorithms. **The repository will soon be updated including the PyBullet environments!**
 
+## Requirements
+
+This repository is implemented and verified on **python 3.8.11**.
+
+## Installation
+
+To run on **pytorch 1.8.0**, enter the [pytorch version link](https://pytorch.org/get-started/previous-versions/#wheel) and run the installation command to desired specifications.
+
+Next, clone this repository and run the following command.
+
+```shell
+$ make setup
+```
+
 ## Algorithms Implemented
 
 1. Deep Q-Network (DQN) <sub><sup> ([V. Mnih et al. 2015](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf)) </sup></sub>
