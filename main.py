@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-The main module that runs an RL algorithm in a certain environment
+Main module that runs an RL algorithm in a certain environment
 """
 
 import datetime

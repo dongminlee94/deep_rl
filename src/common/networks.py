@@ -12,7 +12,7 @@ from torch.nn import Linear, Module, ModuleList
 
 class MLP(Module):
     """
-    Multi-layer Perceptron (MLP) network class
+    Multi-Layer Perceptron (MLP) network class
     """
 
     def __init__(  # pylint: disable=too-many-arguments
