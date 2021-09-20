@@ -35,7 +35,6 @@ class MLP(Module):
         # Set up hidden layers
         self.fc_layers = ModuleList()
         hidden_layers = [hidden_dim] * hidden_num
-
         in_layer = input_dim
         for i, next_layer in enumerate(hidden_layers):
             fc_layer = Linear(in_layer, next_layer)

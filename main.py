@@ -17,7 +17,7 @@ import yaml
 
 if __name__ == "__main__":
     # Main configuration setup
-    with open(os.path.join("configs", "main_config.yaml"), "r") as file:
+    with open(os.path.join("config", "main_config.yaml"), "r") as file:
         main_config: Dict[str, bool] = yaml.load(file, Loader=yaml.FullLoader)
 
     # Environment setup
