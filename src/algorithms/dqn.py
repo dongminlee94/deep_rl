@@ -112,21 +112,22 @@ class DQN:  # pylint: disable=too-many-instance-attributes
         next_obs = batch["next_obs"]
         dones = batch["dones"]
 
-        # Get Q-value given observation
+        # Get Q-value
         q_value: torch.Tensor = self.q_network(cur_obs)
-        q_value = q_value.gather(1, actions.long()).squeeze(1)
+        q_value = q_value.gather(1, actions.long())
 
-        # Target for Q regression
+        # Get target Q-value
         if not self.is_double_dqn:  # DQN
-            q_target: torch.Tensor = self.target_q_network(next_obs)
+            target_next_q_value: torch.Tensor = self.target_q_network(next_obs)
+            target_next_q_value = target_next_q_value.max(dim=-1)[0]
         else:  # Double DQN
             next_q_value: torch.Tensor = self.q_network(next_obs)
-            q_target = self.target_q_network(next_obs)
-            q_target = q_target.gather(1, next_q_value.max(1)[1].unsqueeze(1))
-        q_target = rewards + self.gamma * (1 - dones) * q_target.max(1)[0]
+            target_next_q_value = self.target_q_network(next_obs)
+            target_next_q_value = target_next_q_value.gather(1, next_q_value.max(dim=-1)[1])
+        target_q_value = rewards + self.gamma * (1 - dones) * target_next_q_value
 
-        # Update perdiction network parameter
-        q_loss = F.mse_loss(q_value, q_target.detach())
+        # Update main Q-network parameters
+        q_loss = F.mse_loss(q_value, target_q_value.detach())
         self.q_optimizer.zero_grad()
         q_loss.backward()
         self.q_optimizer.step()
