@@ -42,8 +42,8 @@ class DQN:  # pylint: disable=too-many-instance-attributes
         self.batch_size: int = config["batch_size"]
         self.initial_epsilon: float = config["initial_epsilon"]
         self.final_epsilon: float = config["final_epsilon"]
-        self.epsilon_timesteps: int = config["epsilon_timesteps"]
-        self.target_update_freq: int = config["target_update_freq"]
+        self.decaying_epsilon_period: int = config["decaying_epsilon_period"]
+        self.target_update_period: int = config["target_update_period"]
         self.is_double_dqn: bool = config["is_double_dqn"]
         self.eval_mode: bool = config["eval_mode"]
 
@@ -82,8 +82,8 @@ class DQN:  # pylint: disable=too-many-instance-attributes
 
         # Epsilon setup
         self.epsilon = self.initial_epsilon
-        self.epsilon_decaying_ratio = self.final_epsilon / (
-            self.initial_epsilon * self.epsilon_timesteps
+        self.decaying_epsilon_ratio = self.final_epsilon / (
+            self.initial_epsilon * self.decaying_epsilon_period
         )
 
     def select_action(self, obs: torch.Tensor) -> int:
@@ -97,9 +97,9 @@ class DQN:  # pylint: disable=too-many-instance-attributes
             # Select the action with highest Q-value at current state
             action = self.q_network(obs).argmax().detach().cpu().numpy()
 
-        # Decay epsilon
+        # Decay epsilon as much as ratio
         if self.epsilon > self.final_epsilon:
-            self.epsilon *= self.epsilon_decaying_ratio
+            self.epsilon *= self.decaying_epsilon_ratio
         return action
 
     def train_network(self, batch: Dict[str, torch.Tensor]) -> float:
@@ -132,7 +132,7 @@ class DQN:  # pylint: disable=too-many-instance-attributes
         self.q_optimizer.step()
 
         # Synchronize target network parameters 𝜃‾ as 𝜃 every C steps
-        if self.replay_buffer.ptr % self.target_update_freq == 0:
+        if self.replay_buffer.ptr % self.target_update_period == 0:
             hard_target_update(main=self.q_network, target=self.target_q_network)
 
         return q_loss.item()
