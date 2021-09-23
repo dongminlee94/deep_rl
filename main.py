@@ -14,11 +14,11 @@ from src.common.utils import setup_class
 
 if __name__ == "__main__":
     # Main configuration setup
-    with open(os.path.join("config", "main_config.yaml"), "r") as file:
+    with open(os.path.join("config", "main.yaml"), "r") as file:
         main_config: Dict[str, Any] = yaml.load(file, Loader=yaml.FullLoader)
 
     # Algorithm configuration setup
-    with open(os.path.join("config", main_config["algo_name"] + "_config.yaml"), "r") as file:
+    with open(os.path.join("config", main_config["algo_name"] + ".yaml"), "r") as file:
         algo_config: Dict[str, Any] = yaml.load(file, Loader=yaml.FullLoader)
 
     run_module_path = f'src.runners.run_{main_config["env_name"]}'
