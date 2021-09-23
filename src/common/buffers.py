@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Module for buffers used in reinforcement learning algorithms
+Buffers used in reinforcement learning algorithms
 - off-policy: ReplayBuffer
 - on-policy: Buffer
 """

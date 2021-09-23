@@ -4,44 +4,39 @@
 Main module that runs an RL algorithm in a certain environment
 """
 
-import datetime
 import os
-import time
-from typing import Dict
+from typing import Any, Dict
 
-import gym
-import numpy as np
-import pybullet_envs as bullet
 import torch
 import yaml
+
+from src.common.utils import setup_class
 
 if __name__ == "__main__":
     # Main configuration setup
     with open(os.path.join("config", "main_config.yaml"), "r") as file:
-        main_config: Dict[str, bool] = yaml.load(file, Loader=yaml.FullLoader)
+        main_config: Dict[str, Any] = yaml.load(file, Loader=yaml.FullLoader)
 
-    # Environment setup
-    if main_config["is_discrete_env"]:  # Discrete environment
-        env = gym.make("CartPole-v1")  # 4, 2
+    # Algorithm configuration setup
+    with open(os.path.join("config", main_config["algo_name"] + "_config.yaml"), "r") as file:
+        algo_config: Dict[str, Any] = yaml.load(file, Loader=yaml.FullLoader)
 
-        obs_dim: int = env.observation_space.shape[0]
-        act_num: int = env.action_space.n
-        print(f"Observation dimension: {obs_dim}\n" f"Action number: {act_num}")
-    else:  # Continuous environments
-        # env = gym.make('Pendulum-v0')  # 3, 1
-        # env = gym.make('Hopper-v2')  # 11, 3
-        # env = gym.make('HalfCheetah-v2')  # 17, 6
-        # env = gym.make('Ant-v2')  # 111, 8
-        # env = gym.make('Humanoid-v2')  # 376, 17
+    run_module_path = f'src.runners.run_{main_config["env_name"]}'
+    run_object = setup_class(run_module_path)
 
-        # env = bullet.make('HopperBulletEnv-v0')  # 15, 3
-        env = bullet.make("HalfCheetahBulletEnv-v0")  # 26, 6
+    algo_module_path = f'src.algorithms.{main_config["algo_name"]}'
+    algo_object = setup_class(algo_module_path)
 
-        obs_dim = env.observation_space.shape[0]
-        act_dim: int = env.action_space.shape[0]
-        print(f"Observation dimension: {obs_dim}\n" f"Action dimension: {act_dim}")
+    device: torch.device = (
+        torch.device("cuda", index=main_config["gpu_index"])
+        if torch.cuda.is_available()
+        else torch.device("cpu")
+    )
 
-    print(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-    print(np.__version__)
-    print(time.time())
-    print(torch.__version__)
+    # algorithm = run_object(
+    #     algo_object=algo_object,
+    #     device=device,
+    #     **algo_config
+    # )
+
+    # algorithm.run()

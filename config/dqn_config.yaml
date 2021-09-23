@@ -1,0 +1,32 @@
+# -*- coding: utf-8 -*-
+
+# Configuration used to DQN algorithm
+# -----------------------------------
+# Set up dimension and number of hidden layers
+hidden_dim: 64
+hidden_num: 2
+
+# Set up discount factor
+gamma: 0.99
+
+# Set how many experiences to store
+max_buffer_size: 10000
+
+# Set how many experiences to obtain from replay buffer
+batch_size: 64
+
+# Set 
+initial_epsilon: 1.0
+final_epsilon: 0.1
+
+# Set
+decaying_epsilon_period: 1000
+
+# Set
+target_update_period: 100
+
+# Set
+is_double_dqn: False
+
+# Set
+eval_mode: False

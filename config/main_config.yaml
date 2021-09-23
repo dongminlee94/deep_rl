@@ -1,5 +1,25 @@
 # -*- coding: utf-8 -*-
 
-# The Configuration used to main module
+# Configuration used to main module
+# ---------------------------------
+# Choose an environment among cartpole, pendulum, mujoco, and bullet
+env_name: "cartpole"
 
-is_discrete_env: True
+# Choose an algorithm among dqn, ddqn, a2c, vpg, npg, trpo, ppo, ddpg, td3, sac, and sac-aea
+#   - cartpole: dqn, ddqn, and a2c
+#   - pendulum: vpg, npg, trpo, ppo, ddpg, td3, sac, and sac-aea
+#   - mujoco: vpg, npg, trpo, ppo, ddpg, td3, sac, and sac-aea
+#   - bullet: vpg, npg, trpo, ppo, ddpg, td3, sac, and sac-aea
+algo_name: "dqn"
+
+# Set an experiment name
+exp_name: "exp_1"
+
+# Set a file name
+file_name: null
+
+# Set a GPU index
+gpu_index: 0
+
+# Set a random seed
+seed: 0

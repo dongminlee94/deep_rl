@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Module for deep neural networks used by RL agents
+Deep neural networks used by RL agents
 """
 
 from typing import Callable
