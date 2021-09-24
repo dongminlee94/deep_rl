@@ -48,7 +48,7 @@ class MLP(Module):
         # Set up output layers
         self.output_layer = Linear(in_layer, output_dim) if use_output_layer else lambda x: x
         self.output_layer.weight.data.uniform_(-init_w, init_w)
-        self.output_layer.bias.data.uniform_(-init_w, init_w)
+        self.output_layer.bias.data.fill_(0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Get output over the network when input is given"""

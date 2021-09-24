@@ -6,7 +6,7 @@ Module that runs reinforcement learning algorithms on CartPole environment
 
 import datetime
 import os
-from typing import Tuple, Type
+from typing import Any, Dict, Tuple, Type
 
 import gym
 import torch
@@ -23,25 +23,26 @@ class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
 
     def __init__(
         self,
-        algo_object: Type[DQN],
+        algo_class: Type[DQN],
         device: torch.device,
-        **config,
+        algo_config: Dict[str, Any],
+        **main_config,
     ) -> None:
         self.device = device
-        self.seed: int = config["seed"]
-        self.max_step: int = config["max_step"]
-        self.exp_name: str = config["exp_name"]
-        self.file_name: str = config["file_name"]
+        self.seed: int = main_config["seed"]
+        self.exp_name: str = main_config["exp_name"]
+        self.file_name: str = main_config["file_name"]
 
         self.env = gym.make("CartPole-v1")
         self.observ_dim: int = self.env.observation_space.shape[0]
         self.action_dim: int = self.env.action_space.n
+        self.max_steps: int = self.env._max_episode_steps
 
-        self.algorithm = algo_object(
+        self.algorithm = algo_class(
             observ_dim=self.observ_dim,
             action_num=self.action_dim,
             device=self.device,
-            **config,
+            **algo_config,
         )
 
         if not self.file_name:
@@ -61,7 +62,7 @@ class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
         # Keep interacting until the agent
         #   1) reaches a terminal state or
         #   2) satisfies the done condition
-        while not (done or step_number == self.max_step):
+        while not (done or step_number == self.max_steps):
             if eval_mode:
                 pass
             else:

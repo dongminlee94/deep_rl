@@ -1,18 +1,13 @@
 # -*- coding: utf-8 -*-
 
 """
-Utility functions used in reinforcement learning algorithms
+Utility functions used in runners and algorithms
 """
-
-import importlib
-import inspect
-from typing import Type
 
 import gym
 import numpy as np
 import torch
 
-from src.algorithms.dqn import DQN
 from src.common.networks import MLP
 
 
@@ -23,21 +18,6 @@ def setup_seed(env: gym.Env, seed: int) -> None:
     env.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-
-
-def setup_class(module_path: str) -> Type[DQN]:
-    """
-    Set up a class using module path
-    """
-    module = importlib.import_module(module_path)
-
-    module_class = []
-    for cur_module in inspect.getmembers(module, inspect.isclass):
-        if cur_module[1].__module__ == module_path:
-            module_class.append(cur_module[0])
-
-    class_object = getattr(module, module_class[0])
-    return class_object
 
 
 def hard_target_update(main: MLP, target: MLP) -> None:
