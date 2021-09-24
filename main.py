@@ -4,6 +4,7 @@
 Main module that runs an RL algorithm in a certain environment
 """
 
+import datetime
 import importlib
 import inspect
 import os
@@ -11,6 +12,7 @@ from typing import Any, Dict, Tuple, Type
 
 import torch
 import yaml
+from torch.utils.tensorboard import SummaryWriter
 
 from src.algorithms.dqn import DQN
 from src.runners.run_cartpole import CartPoleRunner
@@ -41,8 +43,14 @@ if __name__ == "__main__":
     with open(os.path.join("config", "main.yaml"), "r") as file:
         main_config: Dict[str, Any] = yaml.load(file, Loader=yaml.FullLoader)
 
+    # Runner configuration setup
+    with open(
+        os.path.join("config", "runners", "run_" + main_config["env_name"] + ".yaml"), "r"
+    ) as file:
+        runner_config: Dict[str, Any] = yaml.load(file, Loader=yaml.FullLoader)
+
     # Algorithm configuration setup
-    with open(os.path.join("config", main_config["algo_name"] + ".yaml"), "r") as file:
+    with open(os.path.join("config", "algorithms", main_config["algo_name"] + ".yaml"), "r") as file:
         algo_config: Dict[str, Any] = yaml.load(file, Loader=yaml.FullLoader)
 
     runner_class, algo_class = setup_classes(
@@ -55,11 +63,18 @@ if __name__ == "__main__":
         else torch.device("cpu")
     )
 
+    if not main_config["file_name"]:
+        file_name = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    writer = SummaryWriter(
+        log_dir=os.path.join("results", main_config["exp_name"], main_config["file_name"])
+    )
+
     algorithm = runner_class(
         algo_class=algo_class,
         device=device,
+        writer=writer,
         algo_config=algo_config,
-        **main_config,
+        **runner_config,
     )
 
     # algorithm.run()

@@ -27,6 +27,3 @@ target_update_period: 100
 
 # Set
 is_double_dqn: False
-
-# Set
-eval_mode: False

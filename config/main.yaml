@@ -20,6 +20,3 @@ file_name: null
 
 # Set a GPU index
 gpu_index: 0
-
-# Set a random seed
-seed: 0

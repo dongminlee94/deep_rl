@@ -42,7 +42,6 @@ class DQN:  # pylint: disable=too-many-instance-attributes
         self.decaying_epsilon_period: int = config["decaying_epsilon_period"]
         self.target_update_period: int = config["target_update_period"]
         self.is_double_dqn: bool = config["is_double_dqn"]
-        self.eval_mode: bool = config["eval_mode"]
 
         # Main Q-network
         self.q_network = MLP(
@@ -83,20 +82,23 @@ class DQN:  # pylint: disable=too-many-instance-attributes
             self.initial_epsilon * self.decaying_epsilon_period
         )
 
-    def select_action(self, obs: torch.Tensor) -> int:
+    def select_action(self, obs: torch.Tensor, is_eval_mode: bool) -> int:
         """
         Select an action given observation
         """
-        if random.random() <= self.epsilon:
-            # Select a random action with epsilon probability
-            action = random.randint(0, self.action_num - 1)
-        else:
-            # Select the action with highest Q-value at current state
+        if is_eval_mode:
             action = self.q_network(obs).argmax().detach().cpu().numpy()
+        else:
+            if random.random() <= self.epsilon:
+                # Select a random action with epsilon probability
+                action = random.randint(0, self.action_num - 1)
+            else:
+                # Select the action with highest Q-value at current state
+                action = self.q_network(obs).argmax().detach().cpu().numpy()
 
-        # Decay epsilon as much as ratio
-        if self.epsilon > self.final_epsilon:
-            self.epsilon *= self.decaying_epsilon_ratio
+            # Decay epsilon as much as ratio
+            if self.epsilon > self.final_epsilon:
+                self.epsilon *= self.decaying_epsilon_ratio
         return action
 
     def collect_experience(  # pylint: disable=too-many-arguments
