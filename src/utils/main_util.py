@@ -20,12 +20,12 @@ def setup_configs() -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     Set up runner and algorithm config according to environment and algorithm name
     """
     # Set up main configuration
-    with open(os.path.join("configs", "main.yaml"), "r") as file:
+    with open(os.path.join("config", "main.yaml"), "r") as file:
         main_config = yaml.load(file, Loader=yaml.FullLoader)
 
     # Set up runner and algorithm configuration
-    runner_config_path = os.path.join("configs", "runners", "run_" + main_config["env_name"] + ".yaml")
-    algo_config_path = os.path.join("configs", "algorithms", main_config["algo_name"] + ".yaml")
+    runner_config_path = os.path.join("config", "runners", "run_" + main_config["env_name"] + ".yaml")
+    algo_config_path = os.path.join("config", "algorithms", main_config["algo_name"] + ".yaml")
 
     configs = []
     for config_path in [runner_config_path, algo_config_path]:
