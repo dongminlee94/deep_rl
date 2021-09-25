@@ -64,6 +64,6 @@ class ReplayBuffer:  # pylint: disable=too-many-instance-attributes
             cur_obs=torch.Tensor(self.cur_obs_buf[indices]).to(self.device),
             actions=torch.Tensor(self.actions_buf[indices]).to(self.device),
             rewards=torch.Tensor(self.rewards_buf[indices]).to(self.device),
-            next_obs=torch.Tensor(self.actions_buf[indices]).to(self.device),
+            next_obs=torch.Tensor(self.next_obs_buf[indices]).to(self.device),
             dones=torch.Tensor(self.dones_buf[indices]).to(self.device),
         )

@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+
+# CartPole runner configuration
+# -----------------------------
+# Set random seed
+seed: 0
+
+# Set the number of iterations to run on CartPole
+num_iterations: 10000
+
+# Set evaluation interval per training iteration
+eval_interval: 5
+
+# Set threshold return value used to early stopping condition
+threshold_return: 500
+
+# Set whether to only evaluate or not
+is_only_eval: False
+
+# Set whether to use rendering
+use_rendering: False

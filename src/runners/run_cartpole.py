@@ -5,14 +5,14 @@ Module that runs reinforcement learning algorithms on CartPole environment
 """
 
 import sys
-from typing import Any, Dict, Tuple, Type
+from typing import Any, Dict, Type
 
 import gym
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from src.algorithms.dqn import DQN
-from src.common.utils import setup_seed
+from src.utils.runner_util import setup_seed
 
 
 class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
@@ -49,12 +49,12 @@ class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
             **algo_config,
         )
 
-    def rollout(self, is_eval_mode: bool) -> Tuple[int, float]:
+    def rollout(self, is_eval_mode: bool) -> float:
         """
         Rollout an episode up to maximum step length or done condition
         """
-        step_number = 0
-        total_reward = 0.0
+        num_steps = 0
+        num_rewards = 0.0
 
         obs = self.env.reset()
         done = False
@@ -62,7 +62,7 @@ class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
         # Keep interacting until the agent
         #   1) reaches a terminal state or
         #   2) satisfies the done condition
-        while not (done or step_number == self.max_steps):
+        while not (done or num_steps == self.max_steps):
             if self.use_rendering:
                 self.env.render()
 
@@ -70,18 +70,19 @@ class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
             action = self.algorithm.select_action(torch.Tensor(obs).to(self.device), is_eval_mode)
             next_obs, reward, done, _ = self.env.step(action)
 
-            # Collect experience (s, a, r, s')
-            self.algorithm.collect_experience(
-                obs=obs, action=action, reward=reward, next_obs=next_obs, done=done
-            )
+            if not is_eval_mode:
+                # Collect experience (s, a, r, s')
+                self.algorithm.collect_experience(
+                    obs=obs, action=action, reward=reward, next_obs=next_obs, done=done
+                )
 
-            # Train network(s)
-            self.algorithm.train_network()
+                # Train the network(s)
+                self.algorithm.train_network()
 
-            total_reward += reward
-            step_number += 1
+            num_rewards += reward
+            num_steps += 1
             obs = next_obs
-        return step_number, total_reward
+        return num_rewards
 
     def run(self) -> None:
         """
@@ -89,45 +90,57 @@ class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
         """
         setup_seed(env=self.env, seed=self.seed)
 
-        cur_returns = 0.0
-        cur_episodes = 0
+        num_returns = 0.0
+        num_episodes = 0
 
         for iteration in range(self.num_iterations):
+            print(f"===== Iteration {iteration} =====")
+
             # Perform the training phase, during which the agent learns
             if not self.is_only_eval:
                 # Rollout one episode
-                _, episode_return = self.rollout(is_eval_mode=False)
+                episode_return = self.rollout(is_eval_mode=False)
 
-                cur_returns += episode_return
-                cur_episodes += 1
-                average_return = cur_returns / cur_episodes
+                num_returns += episode_return
+                num_episodes += 1
+                average_return = num_returns / num_episodes
 
+                # Visualize log information to tensorboard
                 self.writer.add_scalar("train/average_return", average_return, iteration)
                 self.writer.add_scalar("train/episode_return", episode_return, iteration)
+                for key, value in self.algorithm.log_info.items():
+                    self.writer.add_scalar("log_info/" + key, value, iteration)
 
+            # Perform the evaluation phase -- no learning
             if (iteration + 1) % self.eval_interval == 0:
+                print(f"Start evaluation in iteration {iteration}")
                 self.eval(iteration)
 
     def eval(self, iteration: int) -> None:
         """
         Evaluate network(s) trained with the algorithm
         """
-        # Perform the evaluation phase -- no learning
-        cur_returns = 0.0
-        cur_episodes = 0
+        num_returns = 0.0
+        num_episodes = 0
 
         for _ in range(100):
             # Rollout one episode
-            _, episode_return = self.rollout(is_eval_mode=True)
+            episode_return = self.rollout(is_eval_mode=True)
 
-            cur_returns += episode_return
-            cur_episodes += 1
-        average_return = cur_returns / cur_episodes
+            num_returns += episode_return
+            num_episodes += 1
+        average_return = num_returns / num_episodes
 
-        # Log experiment result for evaluation episodes
+        # Visualize log information to tensorboard
         self.writer.add_scalar("eval/average_return", average_return, iteration)
         self.writer.add_scalar("eval/episode_return", episode_return, iteration)
 
         # Save the trained model
         if average_return >= self.threshold_return:
+            print(
+                f"\n==================================================\n"
+                f"In evaluation phase, the last average return value is {average_return}.\n"
+                f"And early stopping condition is {self.threshold_return}.\n"
+                f"Therefore, cartpole runner is terminated."
+            )
             sys.exit()

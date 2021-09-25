@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Configuration used to main module
-# ---------------------------------
+# Main configuration
+# ------------------
 # Choose an environment among cartpole, pendulum, mujoco, and bullet
 env_name: "cartpole"
 
@@ -12,11 +12,11 @@ env_name: "cartpole"
 #   - bullet: vpg, npg, trpo, ppo, ddpg, td3, sac, and sac-aea
 algo_name: "dqn"
 
-# Set an experiment name
+# Set experiment name
 exp_name: "exp_1"
 
-# Set a file name
+# Set file name
 file_name: null
 
-# Set a GPU index
+# Set GPU index
 gpu_index: 0

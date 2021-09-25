@@ -13,7 +13,7 @@ import torch.optim as optim
 
 from src.common.buffers import ReplayBuffer
 from src.common.networks import MLP
-from src.common.utils import hard_target_update
+from src.utils.algo_util import hard_target_update
 
 
 class DQN:  # pylint: disable=too-many-instance-attributes
@@ -70,7 +70,7 @@ class DQN:  # pylint: disable=too-many-instance-attributes
         # Set up replay buffer
         self.replay_buffer = ReplayBuffer(
             observ_dim=self.observ_dim,
-            action_dim=self.action_num,
+            action_dim=1,
             max_buffer_size=self.max_buffer_size,
             batch_size=self.batch_size,
             device=self.device,
@@ -80,6 +80,12 @@ class DQN:  # pylint: disable=too-many-instance-attributes
         self.epsilon = self.initial_epsilon
         self.decaying_epsilon_ratio = self.final_epsilon / (
             self.initial_epsilon * self.decaying_epsilon_period
+        )
+
+        # Set up logging information
+        self.log_info = dict(
+            epsilon=0,
+            q_loss=0.0,
         )
 
     def select_action(self, obs: torch.Tensor, is_eval_mode: bool) -> int:
@@ -99,6 +105,7 @@ class DQN:  # pylint: disable=too-many-instance-attributes
             # Decay epsilon as much as ratio
             if self.epsilon > self.final_epsilon:
                 self.epsilon *= self.decaying_epsilon_ratio
+            self.log_info["epsilon"] = self.epsilon
         return action
 
     def collect_experience(  # pylint: disable=too-many-arguments
@@ -121,11 +128,11 @@ class DQN:  # pylint: disable=too-many-instance-attributes
         # Start training when the number of experience is greater than batch_size
         if self.replay_buffer.ptr > self.batch_size:
             batch = self.replay_buffer.sample()
-            cur_obs = batch["cur_obs"]
-            actions = batch["actions"]
-            rewards = batch["rewards"]
-            next_obs = batch["next_obs"]
-            dones = batch["dones"]
+            cur_obs: torch.Tensor = batch["cur_obs"]
+            actions: torch.Tensor = batch["actions"]
+            rewards: torch.Tensor = batch["rewards"]
+            next_obs: torch.Tensor = batch["next_obs"]
+            dones: torch.Tensor = batch["dones"]
 
             # Get Q-value
             q_value: torch.Tensor = self.q_network(cur_obs)
@@ -134,12 +141,12 @@ class DQN:  # pylint: disable=too-many-instance-attributes
             # Get target Q-value
             if not self.is_double_dqn:  # DQN
                 target_next_q_value: torch.Tensor = self.target_q_network(next_obs)
-                target_next_q_value = target_next_q_value.max(dim=-1)[0]
+                target_next_q_value = target_next_q_value.max(dim=-1)[0].view(-1, 1)
             else:  # Double DQN
                 next_q_value: torch.Tensor = self.q_network(next_obs)
                 target_next_q_value = self.target_q_network(next_obs)
                 target_next_q_value = target_next_q_value.gather(1, next_q_value.max(dim=-1)[1])
-            target_q_value = rewards + self.gamma * (1 - dones) * target_next_q_value
+            target_q_value: torch.Tensor = rewards + self.gamma * (1 - dones) * target_next_q_value
 
             # Update main Q-network parameters
             q_loss = F.mse_loss(q_value, target_q_value.detach())
@@ -150,3 +157,5 @@ class DQN:  # pylint: disable=too-many-instance-attributes
             # Synchronize target network parameters 𝜃‾ as 𝜃 every C steps
             if self.replay_buffer.ptr % self.target_update_period == 0:
                 hard_target_update(main=self.q_network, target=self.target_q_network)
+
+            self.log_info["q_loss"] = q_loss.item()
