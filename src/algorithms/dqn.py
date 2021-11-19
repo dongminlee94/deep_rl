@@ -35,11 +35,12 @@ class DQN:  # pylint: disable=too-many-instance-attributes
         self.hidden_dim: int = config["hidden_dim"]
         self.hidden_num: int = config["hidden_num"]
         self.gamma: float = config["gamma"]
+        self.learning_rate: float = config["learning_rate"]
         self.max_buffer_size: int = config["max_buffer_size"]
         self.batch_size: int = config["batch_size"]
         self.initial_epsilon: float = config["initial_epsilon"]
         self.final_epsilon: float = config["final_epsilon"]
-        self.decaying_epsilon_period: int = config["decaying_epsilon_period"]
+        self.epsilon_decay_period: int = config["epsilon_decay_period"]
         self.target_update_period: int = config["target_update_period"]
         self.is_double_dqn: bool = config["is_double_dqn"]
 
@@ -65,7 +66,7 @@ class DQN:  # pylint: disable=too-many-instance-attributes
         hard_target_update(main=self.q_network, target=self.target_q_network)
 
         # Create an optimizer
-        self.q_optimizer = optim.Adam(self.q_network.parameters(), lr=1e-3)
+        self.q_optimizer = optim.Adam(self.q_network.parameters(), lr=self.learning_rate)
 
         # Set up replay buffer
         self.replay_buffer = ReplayBuffer(
@@ -76,10 +77,10 @@ class DQN:  # pylint: disable=too-many-instance-attributes
             device=self.device,
         )
 
-        # Epsilon setup
+        # Set up epsilon
         self.epsilon = self.initial_epsilon
-        self.decaying_epsilon_ratio = self.final_epsilon / (
-            self.initial_epsilon * self.decaying_epsilon_period
+        self.epsilon_decay = (self.initial_epsilon - self.final_epsilon) * (
+            1 / self.epsilon_decay_period
         )
 
         # Set up logging information
@@ -104,7 +105,7 @@ class DQN:  # pylint: disable=too-many-instance-attributes
 
             # Decay epsilon as much as ratio
             if self.epsilon > self.final_epsilon:
-                self.epsilon *= self.decaying_epsilon_ratio
+                self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
             self.log_info["epsilon"] = self.epsilon
         return action
 

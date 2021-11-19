@@ -9,6 +9,9 @@ hidden_num: 2
 # Set up discount factor
 gamma: 0.99
 
+# Set up learning rate
+learning_rate: 0.001
+
 # Set how many experiences to store to replay buffer
 max_buffer_size: 10000
 
@@ -20,7 +23,7 @@ initial_epsilon: 1.0
 final_epsilon: 0.1
 
 # Set period to decay epsilon
-decaying_epsilon_period: 1000
+epsilon_decay_period: 1000
 
 # Set period to update target Q-network
 target_update_period: 100

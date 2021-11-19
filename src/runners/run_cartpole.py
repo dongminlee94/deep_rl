@@ -4,15 +4,15 @@
 Module that runs reinforcement learning algorithms on CartPole environment
 """
 
-import sys
+import random
 from typing import Any, Dict, Type
 
 import gym
+import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from src.algorithms.dqn import DQN
-from src.utils.runner_util import setup_seed
 
 
 class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
@@ -26,16 +26,16 @@ class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
         device: torch.device,
         writer: SummaryWriter,
         algo_config: Dict[str, Any],
-        **main_config,
+        **runner_config,
     ) -> None:
         self.device = device
         self.writer = writer
-        self.seed: int = main_config["seed"]
-        self.num_iterations: int = main_config["num_iterations"]
-        self.eval_interval: int = main_config["eval_interval"]
-        self.threshold_return: int = main_config["threshold_return"]
-        self.is_only_eval: bool = main_config["is_only_eval"]
-        self.use_rendering: bool = main_config["use_rendering"]
+        self.seed: int = runner_config["seed"]
+        self.num_iterations: int = runner_config["num_iterations"]
+        self.eval_interval: int = runner_config["eval_interval"]
+        self.threshold_return: int = runner_config["threshold_return"]
+        self.is_only_eval: bool = runner_config["is_only_eval"]
+        self.use_rendering: bool = runner_config["use_rendering"]
 
         self.env = gym.make("CartPole-v1")
         self.observ_dim: int = self.env.observation_space.shape[0]
@@ -48,6 +48,8 @@ class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
             device=self.device,
             **algo_config,
         )
+
+        self.is_early_stopping = False
 
     def rollout(self, is_eval_mode: bool) -> float:
         """
@@ -88,59 +90,58 @@ class CartPoleRunner:  # pylint: disable=too-many-instance-attributes
         """
         Run an algorithm on CartPole environment
         """
-        setup_seed(env=self.env, seed=self.seed)
+        # Set up a random seed
+        random.seed(self.seed)
+        self.env.seed(self.seed)
+        np.random.seed(self.seed)
+        torch.manual_seed(self.seed)
 
-        num_returns = 0.0
-        num_episodes = 0
+        train_num_returns = 0.0
+        train_num_episodes = 0
 
         for iteration in range(self.num_iterations):
             print(f"===== Iteration {iteration} =====")
 
             # Perform the training phase, during which the agent learns
             if not self.is_only_eval:
+                print(f"Train in iteration {iteration}")
+
                 # Rollout one episode
-                episode_return = self.rollout(is_eval_mode=False)
+                train_episode_return = self.rollout(is_eval_mode=False)
 
-                num_returns += episode_return
-                num_episodes += 1
-                average_return = num_returns / num_episodes
+                train_num_returns += train_episode_return
+                train_num_episodes += 1
+                train_average_return = train_num_returns / train_num_episodes
 
-                # Visualize log information to tensorboard
-                self.writer.add_scalar("train/average_return", average_return, iteration)
-                self.writer.add_scalar("train/episode_return", episode_return, iteration)
-                for key, value in self.algorithm.log_info.items():
-                    self.writer.add_scalar("log_info/" + key, value, iteration)
+                # Log information to tensorboard
+                self.writer.add_scalar("train/average_return", train_average_return, iteration)
+                self.writer.add_scalar("train/episode_return", train_episode_return, iteration)
 
             # Perform the evaluation phase -- no learning
             if (iteration + 1) % self.eval_interval == 0:
-                print(f"Start evaluation in iteration {iteration}")
-                self.eval(iteration)
+                print(f"Evaluate in iteration {iteration}")
 
-    def eval(self, iteration: int) -> None:
-        """
-        Evaluate network(s) trained with the algorithm
-        """
-        num_returns = 0.0
-        num_episodes = 0
+                eval_num_returns = 0.0
+                eval_num_episodes = 0
 
-        for _ in range(100):
-            # Rollout one episode
-            episode_return = self.rollout(is_eval_mode=True)
+                for _ in range(100):
+                    # Rollout one episode
+                    eval_episode_return = self.rollout(is_eval_mode=True)
 
-            num_returns += episode_return
-            num_episodes += 1
-        average_return = num_returns / num_episodes
+                    eval_num_returns += eval_episode_return
+                    eval_num_episodes += 1
+                eval_average_return = eval_num_returns / eval_num_episodes
 
-        # Visualize log information to tensorboard
-        self.writer.add_scalar("eval/average_return", average_return, iteration)
-        self.writer.add_scalar("eval/episode_return", episode_return, iteration)
+                for key, value in self.algorithm.log_info.items():
+                    self.writer.add_scalar("train/" + key, value, iteration)
+                self.writer.add_scalar("eval/average_return", eval_average_return, iteration)
+                self.writer.add_scalar("eval/episode_return", eval_episode_return, iteration)
 
-        # Save the trained model
-        if average_return >= self.threshold_return:
-            print(
-                f"\n==================================================\n"
-                f"In evaluation phase, the last average return value is {average_return}.\n"
-                f"And early stopping condition is {self.threshold_return}.\n"
-                f"Therefore, cartpole runner is terminated."
-            )
-            sys.exit()
+                # Save the trained model
+                if eval_average_return >= self.threshold_return:
+                    print(
+                        f"\n==================================================\n"
+                        f"In evaluation phase, last average return value is {eval_average_return}.\n"
+                        f"And early stopping condition is {self.threshold_return}.\n"
+                        f"Therefore, cartpole runner is terminated."
+                    )

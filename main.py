@@ -29,7 +29,13 @@ if __name__ == "__main__":
     if not main_config["file_name"]:
         main_config["file_name"] = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     writer = SummaryWriter(
-        log_dir=os.path.join("results", main_config["exp_name"], main_config["file_name"])
+        log_dir=os.path.join(
+            "results",
+            main_config["env_name"],
+            main_config["algo_name"],
+            main_config["exp_name"],
+            main_config["file_name"],
+        )
     )
 
     algorithm = runner_class(
